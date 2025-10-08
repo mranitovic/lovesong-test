@@ -20,13 +20,17 @@ export const authOptions: NextAuthOptions = {
       return session
     },
     async signIn({ user, account, profile }) {
-      // Always allow Google sign-in
-      return true
+      console.log('Sign in callback triggered for:', user?.email);
+      try {
+        // Always allow Google sign-in
+        return true;
+      } catch (error) {
+        console.error('Sign in error:', error);
+        return false;
+      }
     }
   },
-  pages: {
-    signIn: '/auth/signin', // Custom sign-in page (we'll create this)
-  },
+  debug: process.env.NODE_ENV === 'development',
   session: {
     strategy: 'database',
   },
