@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  accounts      Account[]
+  sessions      Session[]
+  albumSessions AlbumSession[]
+  purchases     Purchase[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Custom application models
+model AlbumSession {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  albumData      Json     // Store StoryAnalysis + StoryAnswers
+  hasPaid        Boolean  @default(false)
+  shopifyOrderId String?  @unique
+  createdAt      DateTime @default(now())
+  paidAt         DateTime?
+  expiresAt      DateTime // 24 hours from creation
+  purchases      Purchase[]
+}
+
+model Purchase {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  albumSessionId String
+  albumSession   AlbumSession @relation(fields: [albumSessionId], references: [id], onDelete: Cascade)
+  orderId        String       @unique // Shopify order ID
+  amount         Float        // R$ 100.00
+  currency       String       @default("BRL")
+  status         String       // 'paid', 'refunded'
+  paymentMethod  String       // 'pix', 'credit_card', 'boleto'
+  createdAt      DateTime     @default(now())
+  paidAt         DateTime
+}
