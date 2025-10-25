@@ -1,0 +1,152 @@
+{
+  "common": {
+    "loading": "Carregando...",
+    "continue": "Continuar →",
+    "back": "← Voltar",
+    "submit": "Enviar",
+    "cancel": "Cancelar",
+    "save": "Salvar Alterações",
+    "approve": "Aprovar",
+    "edit": "Editar",
+    "download": "Baixar",
+    "createNew": "Criar Nova Música"
+  },
+  "metadata": {
+    "title": "Gerador de Músicas de Amor com IA",
+    "description": "Transforme sua história de amor em uma música personalizada gerada por IA"
+  },
+  "home": {
+    "title": "Gerador de Músicas de Amor com IA",
+    "description": "Transforme sua história de amor em uma música personalizada"
+  },
+  "form": {
+    "progressIndicator": "Pergunta {current} de {total}",
+    "names": {
+      "question": "Quais são seus nomes?",
+      "placeholder": "",
+      "person1Placeholder": "Seu nome",
+      "person2Placeholder": "Nome do(a) parceiro(a)",
+      "person1Label": "Seu Nome",
+      "person2Label": "Nome do(a) Parceiro(a)"
+    },
+    "meeting": {
+      "question": "Como vocês se conheceram?",
+      "placeholder": "Compartilhe a história do primeiro encontro..."
+    },
+    "attraction": {
+      "question": "O que fez você se apaixonar?",
+      "placeholder": "Descreva o que atraiu vocês um ao outro..."
+    },
+    "memorable": {
+      "question": "Descreva o momento mais memorável de vocês juntos",
+      "placeholder": "Conte sobre um momento especial que se destaca..."
+    },
+    "challenges": {
+      "question": "Quais desafios vocês superaram juntos?",
+      "placeholder": "Compartilhe como vocês ficaram mais fortes como casal..."
+    },
+    "future": {
+      "question": "Como vocês imaginam o futuro juntos?",
+      "placeholder": "Descreva seus sonhos e aspirações..."
+    },
+    "genres": {
+      "question": "Quais são seus gêneros musicais favoritos?",
+      "subtitle": "Selecione seus gêneros musicais favoritos para personalizar sua música",
+      "selected": "Selecionados: {genres}",
+      "selectAtLeast": "Selecione pelo menos um gênero para continuar",
+      "finalButton": "Criar Minha Música"
+    }
+  },
+  "genres": {
+    "rock": "Rock",
+    "pop": "Pop",
+    "jazz": "Jazz",
+    "electronic": "Eletrônico",
+    "country": "Country",
+    "classical": "Clássico",
+    "rnb": "R&B",
+    "indie": "Indie",
+    "folk": "Folk",
+    "hip-hop": "Hip-Hop"
+  },
+  "lyricsPreview": {
+    "badge": "PRÉVIA DA SUA MÚSICA",
+    "title": "Letra Gerada",
+    "description": "Revise a letra da sua música. Você pode editá-la ou gerar uma nova.",
+    "editButton": "Editar Letra",
+    "regenerateButton": "Gerar Nova Letra",
+    "regenerating": "Gerando Nova Letra...",
+    "approveButton": "Aprovar Letra",
+    "footer": "Após aprovar, você poderá prosseguir para o pagamento e gerar sua música"
+  },
+  "songPlayer": {
+    "paymentRequired": "Pagamento Necessário",
+    "viewLyrics": "Ver Letra",
+    "hideLyrics": "Ocultar Letra",
+    "generateSong": "Gerar Música",
+    "generating": "Gerando...",
+    "paymentMessage": "Complete o pagamento para gerar sua música",
+    "generatingMessage": "Gerando música... Isso pode levar alguns minutos",
+    "tryAgain": "Tentar novamente",
+    "songLyrics": "Letra da Música",
+    "songGenerated": "Música gerada:",
+    "multipleVersions": "Múltiplas versões geradas:",
+    "version": "Versão {version}",
+    "downloadSong": "Baixar música",
+    "lyrics": "Letra"
+  },
+  "payment": {
+    "preparingCheckout": "Preparando Checkout...",
+    "redirectMessage": "Você será redirecionado para finalizar a compra em instantes.",
+    "title": "Gere Sua Música Personalizada",
+    "subtitle": "Complete o pagamento para gerar sua música exclusiva por apenas:",
+    "price": "R$ 100,00",
+    "paymentInfo": "Pagamento único • Acesso vitalício",
+    "benefits": {
+      "title": "O que está incluído:",
+      "personalizedSong": "1 música completamente personalizada baseada na sua história",
+      "highQuality": "Download em alta qualidade (MP3)",
+      "customLyrics": "Letra personalizada com os nomes do casal",
+      "lifetimeAccess": "Acesso vitalício à sua música"
+    },
+    "buyNow": "Comprar Agora",
+    "paymentMethods": "Formas de pagamento disponíveis:",
+    "pix": "PIX",
+    "instant": "Instantâneo",
+    "creditCard": "Cartão de Crédito",
+    "boleto": "Boleto",
+    "postPayment": "💡 Após completar o pagamento no checkout seguro do Shopify, volte para esta página. Sua música será gerada automaticamente!"
+  },
+  "results": {
+    "loading": "Carregando...",
+    "preparingSong": "Preparando sua música...",
+    "songNotFound": "Música não encontrada",
+    "title": "Sua Música Personalizada",
+    "yourSong": "Sua Música",
+    "paidMessage": "Sua música está sendo gerada. Isso pode levar alguns minutos.",
+    "unpaidMessage": "Complete o pagamento para gerar sua música personalizada."
+  },
+  "loadingSpinner": {
+    "title": "Criando Sua Música",
+    "message": "Aguarde enquanto geramos sua música personalizada...",
+    "processTime": "Esse processo pode levar alguns minutos...",
+    "step1": "✓ Analisando sua história de amor",
+    "step2": "✓ Gerando sua música única"
+  },
+  "loginGate": {
+    "title": "Entre para Continuar",
+    "description": "Crie sua música de amor personalizada com IA",
+    "signInWith": "Entrar com Google",
+    "privacy": "Nunca postaremos sem sua permissão"
+  },
+  "errors": {
+    "minLength": "Por favor forneça pelo menos {min} caracteres",
+    "required": "Este campo é obrigatório",
+    "nameMinLength": "Por favor insira seu nome (pelo menos 2 caracteres)",
+    "partnerNameMinLength": "Por favor insira o nome do(a) seu(sua) parceiro(a) (pelo menos 2 caracteres)",
+    "detailMinLength": "Por favor forneça mais detalhes (pelo menos 20 caracteres)",
+    "genreRequired": "Por favor selecione pelo menos um gênero musical",
+    "authenticationRequired": "Você precisa estar autenticado",
+    "checkoutFailed": "Falha ao criar checkout. Por favor tente novamente."
+  }
+}

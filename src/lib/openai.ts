@@ -9,48 +9,56 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function analyzeStory(story: string, coupleNames: CoupleNames, userGenres: string[]): Promise<StoryAnalysis> {
-  const prompt = `Analyze the following love story and break it down into 5 songs for an album. Each song should represent a different chapter or emotion from the story.
+// Language configuration for multilingual support
+const LANGUAGE_CONFIG = {
+  'en': { name: 'English', instruction: 'Generate all content in English.' },
+  'pt-BR': { name: 'Brazilian Portuguese', instruction: 'Generate all content in Brazilian Portuguese (Português Brasileiro).' },
+  'de': { name: 'German', instruction: 'Generate all content in German (Deutsch).' }
+} as const;
+
+type Locale = keyof typeof LANGUAGE_CONFIG;
+
+export async function analyzeStory(story: string, coupleNames: CoupleNames, userGenres: string[], locale: string = 'en'): Promise<StoryAnalysis> {
+  const language = LANGUAGE_CONFIG[locale as Locale] || LANGUAGE_CONFIG['en'];
+
+  const prompt = `Analyze the following love story and create 1 beautiful song that captures the essence of their love journey.
+
+IMPORTANT - LANGUAGE: ${language.instruction}
 
 Love Story:
 "${story}"
 
 User's Favorite Music Genres: ${userGenres.join(', ')}
 
-IMPORTANT: The user has selected these favorite genres: ${userGenres.join(', ')}. Please ensure that the 5 songs primarily use these genres, distributing them thoughtfully across the album to create a cohesive musical journey that respects the user's preferences while serving the story.
+IMPORTANT: The user has selected these favorite genres: ${userGenres.join(', ')}. Please select the most appropriate genre from their preferences that best captures the emotional essence of this love story.
 
 Please respond with a JSON object containing:
 - id: unique identifier
 - summary: brief summary of the love story (2-3 sentences)
 - mood: overall mood of the story (happy, melancholic, romantic, dramatic, etc.)
 - themes: array of 3-5 key themes from the story
-- songs: array of 5 song objects, each with:
+- songs: array with exactly 1 song object containing:
   - id: unique identifier
-  - title: song title
-  - description: what this song represents in the story
-  - mood: mood for this specific song
+  - title: song title that captures the essence of their love story
+  - description: what this song represents in their journey
+  - mood: mood for this song
   - genre: suggested music genre (MUST be from user's selected genres: ${userGenres.join(', ')})
   - prompt: detailed prompt for AI music generation that includes the genre style
 
 Genre Selection Guidelines:
 - Use ONLY the user's selected genres: ${userGenres.join(', ')}
-- Match story phases with appropriate genres when possible:
-  * Meeting/attraction → Pop, Indie, Folk
-  * Falling in love → R&B, Pop, Classical
-  * Challenges/drama → Rock, Hip-Hop, Electronic
-  * Resolution/healing → Folk, Classical, Jazz
-  * Future/celebration → Pop, Electronic, Hip-Hop
-- If user selected multiple genres, distribute them across the 5 songs
-- Ensure each song's genre enhances the emotional impact of that story phase
+- Choose the genre that best matches the overall emotional tone of the story
+- Consider the dominant themes and mood when selecting the genre
+- Ensure the genre enhances the emotional impact of the love story
 
-Make the songs flow chronologically through the love story, representing different phases like meeting, falling in love, challenges, resolution, and future together.`;
+Create a song that tells the complete love story in a compelling, emotionally resonant way.`;
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
     messages: [
       {
         role: 'system',
-        content: 'You are an expert music producer and storyteller. Analyze love stories and create compelling song concepts for albums. Always respond with valid JSON only.'
+        content: 'You are an expert music producer and storyteller. Analyze love stories and create compelling song concepts. Always respond with valid JSON only.'
       },
       {
         role: 'user',
@@ -69,11 +77,10 @@ Make the songs flow chronologically through the love story, representing differe
   try {
     const analysis = JSON.parse(content) as StoryAnalysis;
 
-    // Generate lyrics for each song
+    // Generate lyrics for the song (we only have one now)
     const songsWithLyrics = await Promise.all(
-      analysis.songs.map(async (song, index) => {
-        const isFirstSong = index === 0;
-        const lyrics = await generateLyrics(song, coupleNames, isFirstSong, userGenres, index);
+      analysis.songs.map(async (song) => {
+        const lyrics = await generateLyrics(song, coupleNames, true, userGenres, 0, locale);
         return {
           ...song,
           lyrics
@@ -123,8 +130,10 @@ export async function generateLyrics(
   coupleNames: CoupleNames,
   isFirstSong: boolean = false,
   userGenres: string[] = [],
-  songIndex: number = 0
+  songIndex: number = 0,
+  locale: string = 'en'
 ): Promise<string> {
+  const language = LANGUAGE_CONFIG[locale as Locale] || LANGUAGE_CONFIG['en'];
   // Progressive name usage strategy based on song position
   const getNameInclusion = (index: number): string => {
     switch (index) {
@@ -202,6 +211,8 @@ export async function generateLyrics(
   const genreStructure = getGenreStructure(songPrompt.genre);
 
   const prompt = `Generate professional song lyrics for a love story song with the following details:
+
+IMPORTANT - LANGUAGE: ${language.instruction} All lyrics, section headers, and content must be in ${language.name}.
 
 Song Title: "${songPrompt.title}"
 Song Description: ${songPrompt.description}

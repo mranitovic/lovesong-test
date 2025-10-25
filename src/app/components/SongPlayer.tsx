@@ -262,11 +262,8 @@ export default function SongPlayer({ songPrompt, index, generationState, onGener
   return (
     <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
       <div className="flex items-center mb-4">
-        <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mr-4">
-          <span className="text-pink-600 font-semibold">{index + 1}</span>
-        </div>
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900">{songPrompt.title}</h3>
+          <h3 className="font-semibold text-gray-900 text-lg">{songPrompt.title}</h3>
           <p className="text-gray-600 text-sm mb-2">{songPrompt.description}</p>
           <div className="flex gap-2 mb-2">
             <span className="text-xs bg-gray-100 px-2 py-1 rounded">{songPrompt.genre}</span>
@@ -276,7 +273,7 @@ export default function SongPlayer({ songPrompt, index, generationState, onGener
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0h-2m-2-5a2 2 0 01-4 0V9a2 2 0 014 0v1z" />
                 </svg>
-                Lyrics Only
+                Pagamento Necessário
               </span>
             )}
           </div>
@@ -284,7 +281,7 @@ export default function SongPlayer({ songPrompt, index, generationState, onGener
             onClick={() => setShowLyrics(!showLyrics)}
             className="text-xs text-pink-600 hover:text-pink-700 font-medium"
           >
-            {showLyrics ? 'Hide Lyrics' : 'View Lyrics'}
+            {showLyrics ? 'Ocultar Letra' : 'Ver Letra'}
           </button>
         </div>
 
@@ -303,10 +300,10 @@ export default function SongPlayer({ songPrompt, index, generationState, onGener
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Generating...
+                    Gerando...
                   </>
                 ) : (
-                  'Generate Song'
+                  'Gerar Música'
                 )}
               </button>
             ) : (
@@ -314,7 +311,7 @@ export default function SongPlayer({ songPrompt, index, generationState, onGener
                 <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0h-2m-2-5a2 2 0 01-4 0V9a2 2 0 014 0v1z" />
                 </svg>
-                <span className="text-gray-500 text-sm">Music generation available for first song only</span>
+                <span className="text-gray-500 text-sm">Complete o pagamento para gerar sua música</span>
               </div>
             )}
           </>
@@ -327,7 +324,7 @@ export default function SongPlayer({ songPrompt, index, generationState, onGener
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            Generating song... This may take a few minutes
+            Gerando música... Isso pode levar alguns minutos
           </div>
         )}
       </div>
@@ -340,7 +337,7 @@ export default function SongPlayer({ songPrompt, index, generationState, onGener
             onClick={generateSong}
             className="mt-2 text-red-600 text-sm underline hover:text-red-700"
           >
-            Try again
+            Tentar novamente
           </button>
         </div>
       )}
@@ -353,7 +350,7 @@ export default function SongPlayer({ songPrompt, index, generationState, onGener
             <svg className="w-4 h-4 mr-2 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <h5 className="font-medium text-pink-800">Song Lyrics</h5>
+            <h5 className="font-medium text-pink-800">Letra da Música</h5>
           </div>
           <div className="max-h-48 overflow-y-auto bg-white rounded p-3 border border-pink-100">
             {formatLyricsForDisplay(songPrompt.lyrics)}
@@ -364,19 +361,19 @@ export default function SongPlayer({ songPrompt, index, generationState, onGener
       {hasGeneratedSongs && (
         <div className="space-y-4">
           <div className="text-sm text-gray-600 mb-2">
-            {generatedSongs!.length > 1 ? 'Multiple versions generated:' : 'Song generated:'}
+            {generatedSongs!.length > 1 ? 'Múltiplas versões geradas:' : 'Música gerada:'}
           </div>
 
           {generatedSongs!.map((song) => (
             <div key={song.id} className="border border-gray-100 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium text-gray-900">
-                  {song.version ? `Version ${song.version}` : song.title}
+                  {song.version ? `Versão ${song.version}` : song.title}
                 </h4>
                 <button
                   onClick={() => downloadSong(song)}
                   className="text-gray-500 hover:text-pink-600 transition-colors"
-                  title="Download song"
+                  title="Baixar música"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -435,7 +432,7 @@ export default function SongPlayer({ songPrompt, index, generationState, onGener
                     <svg className="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <h5 className="font-medium text-gray-900">Lyrics</h5>
+                    <h5 className="font-medium text-gray-900">Letra</h5>
                   </div>
                   <div className="text-sm text-gray-700 whitespace-pre-line max-h-40 overflow-y-auto">
                     {song.lyrics}

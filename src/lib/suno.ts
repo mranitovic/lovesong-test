@@ -103,7 +103,7 @@ export class SunoClient {
         style: mapGenreToSunoStyle(songPrompt.genre), // Map genre to Suno style
         customMode: true, // Enable custom mode for lyrics-based generation
         instrumental: false,
-        model: 'V4',
+        model: 'V5',
         callBackUrl: 'https://webhook.site/unique-id' // Placeholder callback URL
       };
 
@@ -279,7 +279,7 @@ export class SunoClient {
         style: mapGenreToSunoStyle(songPrompt.genre), // Map genre to Suno style
         customMode: true, // Enable custom mode for lyrics-based generation
         instrumental: false,
-        model: 'V4',
+        model: 'V5',
         callBackUrl: 'https://webhook.site/unique-id' // Placeholder callback URL
       };
 
@@ -360,7 +360,7 @@ export class SunoClient {
         style: mapGenreToSunoStyle(songPrompt.genre), // Map genre to Suno style
         customMode: true, // Enable custom mode for lyrics-based generation
         instrumental: false,
-        model: 'V4',
+        model: 'V5',
         callBackUrl: 'https://webhook.site/unique-id' // Placeholder callback URL
       };
 

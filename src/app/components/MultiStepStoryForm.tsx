@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import QuestionStep from './QuestionStep';
 import ProgressIndicator from './ProgressIndicator';
 import { StoryAnswers, CoupleNames } from '@/types';
@@ -11,53 +12,25 @@ interface MultiStepStoryFormProps {
 }
 
 interface Question {
-  id: keyof Omit<StoryAnswers, 'names'>;
-  question: string;
-  placeholder: string;
-  type?: 'text' | 'textarea' | 'names';
+  id: keyof StoryAnswers;
+  type?: 'text' | 'textarea' | 'names' | 'genres';
 }
 
-const QUESTIONS: Array<Question | { id: 'names'; question: string; placeholder: string; type: 'names' } | { id: 'genres'; question: string; placeholder: string; type: 'genres' }> = [
-  {
-    id: 'names',
-    question: "What are your names?",
-    placeholder: "Tell us your first names",
-    type: 'names'
-  },
-  {
-    id: 'meeting',
-    question: "How did you two first meet?",
-    placeholder: "Share the story of your first encounter..."
-  },
-  {
-    id: 'attraction',
-    question: "What made you fall in love with them?",
-    placeholder: "Describe what attracted you to each other..."
-  },
-  {
-    id: 'memorable',
-    question: "Describe your most memorable moment together",
-    placeholder: "Tell us about a special moment that stands out..."
-  },
-  {
-    id: 'challenges',
-    question: "What challenges have you overcome together?",
-    placeholder: "Share how you've grown stronger as a couple..."
-  },
-  {
-    id: 'future',
-    question: "How do you envision your future together?",
-    placeholder: "Describe your dreams and aspirations..."
-  },
-  {
-    id: 'genres',
-    question: "What are your favorite music genres?",
-    placeholder: "Choose your preferred music styles",
-    type: 'genres'
-  }
+const QUESTION_IDS: Question[] = [
+  { id: 'names', type: 'names' },
+  { id: 'meeting', type: 'textarea' },
+  { id: 'attraction', type: 'textarea' },
+  { id: 'memorable', type: 'textarea' },
+  { id: 'challenges', type: 'textarea' },
+  { id: 'future', type: 'textarea' },
+  { id: 'genres', type: 'genres' }
 ];
 
 export default function MultiStepStoryForm({ onSubmit, isLoading }: MultiStepStoryFormProps) {
+  const t = useTranslations('form');
+  const tErrors = useTranslations('errors');
+  const tCommon = useTranslations('common');
+
   const [currentStep, setCurrentStep] = useState(1);
   const [answers, setAnswers] = useState<StoryAnswers>({
     names: { person1: '', person2: '' },
@@ -117,28 +90,28 @@ export default function MultiStepStoryForm({ onSubmit, isLoading }: MultiStepSto
   };
 
   const validateStep = (stepIndex: number): boolean => {
-    const question = QUESTIONS[stepIndex - 1];
+    const question = QUESTION_IDS[stepIndex - 1];
     const questionId = question.id;
 
     if (questionId === 'names') {
       const { person1, person2 } = answers.names;
       if (!person1.trim() || person1.trim().length < 2) {
-        setErrors(prev => ({ ...prev, names: 'Please enter your name (at least 2 characters)' }));
+        setErrors(prev => ({ ...prev, names: tErrors('nameMinLength') }));
         return false;
       }
       if (!person2.trim() || person2.trim().length < 2) {
-        setErrors(prev => ({ ...prev, names: "Please enter your partner's name (at least 2 characters)" }));
+        setErrors(prev => ({ ...prev, names: tErrors('partnerNameMinLength') }));
         return false;
       }
     } else if (questionId === 'genres') {
       if (answers.genres.length === 0) {
-        setErrors(prev => ({ ...prev, genres: 'Please select at least one music genre' }));
+        setErrors(prev => ({ ...prev, genres: tErrors('genreRequired') }));
         return false;
       }
     } else {
       const value = answers[questionId as keyof Omit<StoryAnswers, 'names' | 'genres'>];
       if (!value.trim() || value.trim().length < 20) {
-        setErrors(prev => ({ ...prev, [questionId]: 'Please provide more detail (at least 20 characters)' }));
+        setErrors(prev => ({ ...prev, [questionId]: tErrors('detailMinLength') }));
         return false;
       }
     }
@@ -151,7 +124,7 @@ export default function MultiStepStoryForm({ onSubmit, isLoading }: MultiStepSto
       return;
     }
 
-    if (currentStep < QUESTIONS.length) {
+    if (currentStep < QUESTION_IDS.length) {
       setCurrentStep(prev => prev + 1);
     } else {
       // Final step - submit the form
@@ -166,7 +139,7 @@ export default function MultiStepStoryForm({ onSubmit, isLoading }: MultiStepSto
   };
 
   const getCurrentQuestionValue = (): string => {
-    const question = QUESTIONS[currentStep - 1];
+    const question = QUESTION_IDS[currentStep - 1];
     if (question.id === 'names') {
       return JSON.stringify(answers.names);
     }
@@ -181,7 +154,7 @@ export default function MultiStepStoryForm({ onSubmit, isLoading }: MultiStepSto
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">Creating your personalized album...</p>
+          <p className="text-lg text-gray-600">{tCommon('loading')}</p>
         </div>
       </div>
     );
@@ -190,27 +163,36 @@ export default function MultiStepStoryForm({ onSubmit, isLoading }: MultiStepSto
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 relative overflow-hidden">
       <div className="absolute top-8 left-0 right-0 z-10">
-        <ProgressIndicator currentStep={currentStep} totalSteps={QUESTIONS.length} />
+        <ProgressIndicator currentStep={currentStep} totalSteps={QUESTION_IDS.length} />
       </div>
 
       {(() => {
-        const question = QUESTIONS[currentStep - 1];
+        const question = QUESTION_IDS[currentStep - 1];
         const questionId = question.id;
+
+        // Helper to safely get placeholder - some questions like 'names' don't have a single placeholder
+        const getPlaceholder = () => {
+          try {
+            return t(`${questionId}.placeholder`);
+          } catch {
+            return '';
+          }
+        };
 
         return (
           <QuestionStep
             key={questionId}
-            question={question.question}
-            placeholder={question.placeholder}
+            question={t(`${questionId}.question`)}
+            placeholder={getPlaceholder()}
             value={getCurrentQuestionValue()}
             onChange={(value) => updateAnswer(questionId, value)}
             onContinue={handleContinue}
             onBack={currentStep > 1 ? handleBack : undefined}
             isFirst={currentStep === 1}
-            isLast={currentStep === QUESTIONS.length}
+            isLast={currentStep === QUESTION_IDS.length}
             error={errors[questionId]}
             questionNumber={currentStep}
-            totalQuestions={QUESTIONS.length}
+            totalQuestions={QUESTION_IDS.length}
             type={question.type || 'textarea'}
           />
         );
