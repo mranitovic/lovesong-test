@@ -82,10 +82,10 @@ export default function PaymentGate({ albumSessionId }: PaymentGateProps) {
 
         {/* Heading */}
         <h3 className="text-2xl font-bold text-gray-900 mb-2">
-          Desbloqueie 4 Músicas Restantes
+          Gere Sua Música Personalizada
         </h3>
         <p className="text-gray-600 mb-6">
-          Você tem acesso à primeira música. Adquira o álbum completo por apenas:
+          Complete o pagamento para gerar sua música exclusiva por apenas:
         </p>
 
         {/* Price */}
@@ -107,7 +107,7 @@ export default function PaymentGate({ albumSessionId }: PaymentGateProps) {
               </svg>
             </div>
             <span className="text-sm text-gray-700">
-              <strong>4 músicas adicionais</strong> personalizadas
+              <strong>1 música completamente personalizada</strong> baseada na sua história
             </span>
           </div>
 
@@ -129,7 +129,7 @@ export default function PaymentGate({ albumSessionId }: PaymentGateProps) {
               </svg>
             </div>
             <span className="text-sm text-gray-700">
-              <strong>Álbum completo</strong> com 5 faixas únicas
+              <strong>Letra personalizada</strong> com os nomes do casal
             </span>
           </div>
 
@@ -140,7 +140,7 @@ export default function PaymentGate({ albumSessionId }: PaymentGateProps) {
               </svg>
             </div>
             <span className="text-sm text-gray-700">
-              <strong>Acesso vitalício</strong> às suas músicas
+              <strong>Acesso vitalício</strong> à sua música
             </span>
           </div>
         </div>
@@ -182,7 +182,7 @@ export default function PaymentGate({ albumSessionId }: PaymentGateProps) {
         {/* Info about payment */}
         <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <p className="text-xs text-blue-800 text-center">
-            💡 Após completar o pagamento no checkout seguro do Shopify, volte para esta página. Suas músicas serão desbloqueadas automaticamente!
+            💡 Após completar o pagamento no checkout seguro do Shopify, volte para esta página. Sua música será gerada automaticamente!
           </p>
         </div>
       </div>

@@ -1,0 +1,152 @@
+{
+  "common": {
+    "loading": "Laden...",
+    "continue": "Weiter →",
+    "back": "← Zurück",
+    "submit": "Absenden",
+    "cancel": "Abbrechen",
+    "save": "Änderungen speichern",
+    "approve": "Genehmigen",
+    "edit": "Bearbeiten",
+    "download": "Herunterladen",
+    "createNew": "Neues Lied erstellen"
+  },
+  "metadata": {
+    "title": "KI-Liebesgeschichte Liedgenerator",
+    "description": "Verwandeln Sie Ihre Liebesgeschichte in ein personalisiertes KI-generiertes Lied"
+  },
+  "home": {
+    "title": "KI-Liebesgeschichte Liedgenerator",
+    "description": "Verwandeln Sie Ihre Liebesgeschichte in ein personalisiertes Lied"
+  },
+  "form": {
+    "progressIndicator": "Frage {current} von {total}",
+    "names": {
+      "question": "Wie heißt ihr?",
+      "placeholder": "",
+      "person1Placeholder": "Ihr Name",
+      "person2Placeholder": "Name des Partners",
+      "person1Label": "Ihr Name",
+      "person2Label": "Name des Partners"
+    },
+    "meeting": {
+      "question": "Wie habt ihr euch kennengelernt?",
+      "placeholder": "Erzählen Sie die Geschichte Ihrer ersten Begegnung..."
+    },
+    "attraction": {
+      "question": "Was hat Sie ineinander verliebt gemacht?",
+      "placeholder": "Beschreiben Sie, was Sie aneinander angezogen hat..."
+    },
+    "memorable": {
+      "question": "Beschreiben Sie Ihren unvergesslichsten Moment zusammen",
+      "placeholder": "Erzählen Sie uns von einem besonderen Moment..."
+    },
+    "challenges": {
+      "question": "Welche Herausforderungen habt ihr zusammen gemeistert?",
+      "placeholder": "Teilen Sie, wie Sie als Paar stärker geworden sind..."
+    },
+    "future": {
+      "question": "Wie stellen Sie sich Ihre gemeinsame Zukunft vor?",
+      "placeholder": "Beschreiben Sie Ihre Träume und Wünsche..."
+    },
+    "genres": {
+      "question": "Was sind Ihre Lieblingsmusikgenres?",
+      "subtitle": "Wählen Sie Ihre Lieblingsmusikgenres um Ihr Lied zu personalisieren",
+      "selected": "Ausgewählt: {genres}",
+      "selectAtLeast": "Wählen Sie mindestens ein Genre um fortzufahren",
+      "finalButton": "Mein Lied erstellen"
+    }
+  },
+  "genres": {
+    "rock": "Rock",
+    "pop": "Pop",
+    "jazz": "Jazz",
+    "electronic": "Elektronisch",
+    "country": "Country",
+    "classical": "Klassisch",
+    "rnb": "R&B",
+    "indie": "Indie",
+    "folk": "Folk",
+    "hip-hop": "Hip-Hop"
+  },
+  "lyricsPreview": {
+    "badge": "IHRE LIEDVORSCHAU",
+    "title": "Generierter Text",
+    "description": "Überprüfen Sie Ihren Liedtext. Sie können ihn bearbeiten oder einen neuen generieren.",
+    "editButton": "Text bearbeiten",
+    "regenerateButton": "Neuen Text generieren",
+    "regenerating": "Neuen Text generieren...",
+    "approveButton": "Text genehmigen",
+    "footer": "Nach der Genehmigung können Sie mit der Zahlung fortfahren und Ihr Lied generieren"
+  },
+  "songPlayer": {
+    "paymentRequired": "Zahlung erforderlich",
+    "viewLyrics": "Text anzeigen",
+    "hideLyrics": "Text ausblenden",
+    "generateSong": "Lied generieren",
+    "generating": "Generiere...",
+    "paymentMessage": "Zahlung abschließen um Ihr Lied zu generieren",
+    "generatingMessage": "Lied wird generiert... Dies kann einige Minuten dauern",
+    "tryAgain": "Erneut versuchen",
+    "songLyrics": "Liedtext",
+    "songGenerated": "Lied generiert:",
+    "multipleVersions": "Mehrere Versionen generiert:",
+    "version": "Version {version}",
+    "downloadSong": "Lied herunterladen",
+    "lyrics": "Text"
+  },
+  "payment": {
+    "preparingCheckout": "Kasse vorbereiten...",
+    "redirectMessage": "Sie werden in Kürze weitergeleitet, um den Kauf abzuschließen.",
+    "title": "Generieren Sie Ihr personalisiertes Lied",
+    "subtitle": "Schließen Sie die Zahlung ab, um Ihr exklusives Lied zu generieren für nur:",
+    "price": "R$ 100,00",
+    "paymentInfo": "Einmalige Zahlung • Lebenslanger Zugang",
+    "benefits": {
+      "title": "Was ist enthalten:",
+      "personalizedSong": "1 vollständig personalisiertes Lied basierend auf Ihrer Geschichte",
+      "highQuality": "Hochwertiger Download (MP3)",
+      "customLyrics": "Individueller Text mit Paarnamen",
+      "lifetimeAccess": "Lebenslanger Zugang zu Ihrem Lied"
+    },
+    "buyNow": "Jetzt kaufen",
+    "paymentMethods": "Verfügbare Zahlungsmethoden:",
+    "pix": "PIX",
+    "instant": "Sofort",
+    "creditCard": "Kreditkarte",
+    "boleto": "Boleto",
+    "postPayment": "💡 Nachdem Sie die Zahlung an Shopifys sicherem Checkout abgeschlossen haben, kehren Sie zu dieser Seite zurück. Ihr Lied wird automatisch generiert!"
+  },
+  "results": {
+    "loading": "Laden...",
+    "preparingSong": "Ihr Lied wird vorbereitet...",
+    "songNotFound": "Lied nicht gefunden",
+    "title": "Ihr personalisiertes Lied",
+    "yourSong": "Ihr Lied",
+    "paidMessage": "Ihr Lied wird generiert. Dies kann einige Minuten dauern.",
+    "unpaidMessage": "Schließen Sie die Zahlung ab, um Ihr personalisiertes Lied zu generieren."
+  },
+  "loadingSpinner": {
+    "title": "Ihr Lied wird erstellt",
+    "message": "Bitte warten Sie, während wir Ihr personalisiertes Lied generieren...",
+    "processTime": "Dieser Vorgang kann einige Minuten dauern...",
+    "step1": "✓ Analyse Ihrer Liebesgeschichte",
+    "step2": "✓ Generierung Ihres einzigartigen Liedes"
+  },
+  "loginGate": {
+    "title": "Anmelden um fortzufahren",
+    "description": "Erstellen Sie Ihr personalisiertes KI-Liebeslied",
+    "signInWith": "Mit Google anmelden",
+    "privacy": "Wir werden niemals ohne Ihre Erlaubnis posten"
+  },
+  "errors": {
+    "minLength": "Bitte geben Sie mindestens {min} Zeichen ein",
+    "required": "Dieses Feld ist erforderlich",
+    "nameMinLength": "Bitte geben Sie Ihren Namen ein (mindestens 2 Zeichen)",
+    "partnerNameMinLength": "Bitte geben Sie den Namen Ihres Partners ein (mindestens 2 Zeichen)",
+    "detailMinLength": "Bitte geben Sie mehr Details an (mindestens 20 Zeichen)",
+    "genreRequired": "Bitte wählen Sie mindestens ein Musikgenre",
+    "authenticationRequired": "Sie müssen authentifiziert sein",
+    "checkoutFailed": "Fehler beim Erstellen des Checkouts. Bitte versuchen Sie es erneut."
+  }
+}

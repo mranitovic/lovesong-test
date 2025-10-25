@@ -15,13 +15,103 @@ function verifyShopifyWebhook(body: string, signature: string): boolean {
   );
 }
 
+// Extract album session ID from order (multiple methods)
+function extractAlbumSessionId(order: any): string | null {
+  // Method 1: From cart attributes
+  const cartAttribute = order.note_attributes?.find(
+    (attr: any) => attr.name === 'album_session_id'
+  );
+  if (cartAttribute?.value) {
+    return cartAttribute.value;
+  }
+
+  // Method 2: From order note (backup)
+  if (order.note) {
+    const match = order.note.match(/Album Session: ([a-f0-9-]+)/i);
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+
+  return null;
+}
+
+// Find album session using multiple matching strategies
+async function findAlbumSession(order: any, userEmail: string): Promise<any | null> {
+  const orderId = order.id.toString();
+
+  // Strategy 1: Match by shopifyCheckoutId if available
+  if (order.checkout_id) {
+    const checkoutIdGid = `gid://shopify/Checkout/${order.checkout_id}`;
+    const sessionByCheckout = await prisma.albumSession.findUnique({
+      where: { shopifyCheckoutId: checkoutIdGid }
+    });
+
+    if (sessionByCheckout) {
+      console.log(`✅ Matched album session by checkout ID: ${sessionByCheckout.id}`);
+      return sessionByCheckout;
+    }
+  }
+
+  // Strategy 2: Match by extracted album session ID from order
+  const albumSessionId = extractAlbumSessionId(order);
+  if (albumSessionId) {
+    const sessionById = await prisma.albumSession.findUnique({
+      where: { id: albumSessionId }
+    });
+
+    if (sessionById) {
+      console.log(`✅ Matched album session by extracted ID: ${sessionById.id}`);
+      return sessionById;
+    }
+  }
+
+  // Strategy 3: Match by shopifyOrderId (already paid)
+  const sessionByOrderId = await prisma.albumSession.findUnique({
+    where: { shopifyOrderId: orderId }
+  });
+
+  if (sessionByOrderId) {
+    console.log(`✅ Matched album session by order ID (duplicate webhook): ${sessionByOrderId.id}`);
+    return sessionByOrderId;
+  }
+
+  // Strategy 4: Match by user email + most recent unpaid session
+  const user = await prisma.user.findUnique({
+    where: { email: userEmail }
+  });
+
+  if (user) {
+    const sessionByUser = await prisma.albumSession.findFirst({
+      where: {
+        userId: user.id,
+        hasPaid: false,
+        expiresAt: { gt: new Date() }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (sessionByUser) {
+      console.log(`✅ Matched album session by user email (fallback): ${sessionByUser.id}`);
+      return sessionByUser;
+    }
+  }
+
+  console.error('❌ No album session found using any strategy');
+  return null;
+}
+
 export async function POST(request: NextRequest) {
+  const webhookTopic = request.headers.get('x-shopify-topic') || 'unknown';
+  let webhookLogId: string | null = null;
+
   try {
     // Get raw body for webhook verification
     const body = await request.text();
     const signature = request.headers.get('x-shopify-hmac-sha256');
 
     if (!signature) {
+      console.error('❌ Missing webhook signature');
       return NextResponse.json(
         { error: 'Missing webhook signature' },
         { status: 401 }
@@ -29,103 +119,255 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify webhook authenticity
-    if (!verifyShopifyWebhook(body, signature)) {
+    const isVerified = verifyShopifyWebhook(body, signature);
+
+    // Parse the webhook payload
+    const order = JSON.parse(body);
+    const orderId = order.id?.toString();
+
+    // Create webhook log entry immediately
+    const webhookLog = await prisma.webhookLog.create({
+      data: {
+        topic: webhookTopic,
+        shopifyOrderId: orderId,
+        payload: order,
+        signature: signature,
+        verified: isVerified
+      }
+    });
+    webhookLogId = webhookLog.id;
+
+    if (!isVerified) {
+      await prisma.webhookLog.update({
+        where: { id: webhookLogId },
+        data: {
+          error: 'Invalid webhook signature',
+          processedAt: new Date()
+        }
+      });
+
+      console.error('❌ Invalid webhook signature');
       return NextResponse.json(
         { error: 'Invalid webhook signature' },
         { status: 401 }
       );
     }
 
-    // Parse the webhook payload
-    const order = JSON.parse(body);
+    console.log(`📥 Webhook received: ${webhookTopic}, Order: ${orderId}`);
 
     // Only process paid orders
     if (order.financial_status !== 'paid') {
+      await prisma.webhookLog.update({
+        where: { id: webhookLogId },
+        data: {
+          processed: true,
+          processedAt: new Date(),
+          error: `Order not paid yet (status: ${order.financial_status})`
+        }
+      });
+
+      console.log(`⏸️  Order ${orderId} not paid yet, skipping`);
       return NextResponse.json({ message: 'Order not paid yet' });
-    }
-
-    // Check if order contains our product
-    const hasOurProduct = order.line_items?.some((item: any) =>
-      item.variant_id?.toString() === process.env.SHOPIFY_PRODUCT_VARIANT_ID
-    );
-
-    if (!hasOurProduct) {
-      return NextResponse.json({ message: 'Order does not contain our product' });
     }
 
     // Extract user information from order
     const userEmail = order.email;
-    const orderId = order.id.toString();
     const amount = parseFloat(order.total_price);
     const paymentMethod = order.payment_gateway_names?.[0] || 'unknown';
 
+    if (!userEmail) {
+      await prisma.webhookLog.update({
+        where: { id: webhookLogId },
+        data: {
+          error: 'No email in order',
+          processedAt: new Date()
+        }
+      });
+
+      console.error('❌ No email in order');
+      return NextResponse.json(
+        { error: 'No email in order' },
+        { status: 400 }
+      );
+    }
+
     // Find user by email
     const user = await prisma.user.findUnique({
-      where: { email: userEmail },
-      include: { albumSessions: true }
+      where: { email: userEmail }
     });
 
     if (!user) {
-      console.error(`User not found for email: ${userEmail}`);
+      await prisma.webhookLog.update({
+        where: { id: webhookLogId },
+        data: {
+          error: `User not found for email: ${userEmail}`,
+          processedAt: new Date()
+        }
+      });
+
+      console.error(`❌ User not found for email: ${userEmail}`);
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       );
     }
 
-    // Find the most recent unpaid album session for this user
-    const albumSession = await prisma.albumSession.findFirst({
-      where: {
-        userId: user.id,
-        hasPaid: false,
-        expiresAt: { gt: new Date() } // Not expired
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    // Find album session using enhanced matching strategies
+    const albumSession = await findAlbumSession(order, userEmail);
 
     if (!albumSession) {
-      console.error(`No unpaid album session found for user: ${userEmail}`);
+      await prisma.webhookLog.update({
+        where: { id: webhookLogId },
+        data: {
+          error: `No album session found for user: ${userEmail}`,
+          processedAt: new Date()
+        }
+      });
+
+      console.error(`❌ No album session found for user: ${userEmail}`);
       return NextResponse.json(
-        { error: 'No unpaid album session found' },
+        { error: 'No album session found' },
         { status: 404 }
       );
     }
 
-    // Update album session as paid
-    await prisma.albumSession.update({
-      where: { id: albumSession.id },
-      data: {
-        hasPaid: true,
-        shopifyOrderId: orderId,
-        paidAt: new Date()
+    // IDEMPOTENCY CHECK: If this session is already paid with this order ID, skip processing
+    if (albumSession.hasPaid && albumSession.shopifyOrderId === orderId) {
+      await prisma.webhookLog.update({
+        where: { id: webhookLogId },
+        data: {
+          processed: true,
+          albumSessionId: albumSession.id,
+          processedAt: new Date(),
+          error: 'Duplicate webhook - already processed'
+        }
+      });
+
+      console.log(`⏭️  Webhook already processed for order ${orderId}, skipping`);
+      return NextResponse.json({
+        success: true,
+        message: 'Webhook already processed (idempotent)'
+      });
+    }
+
+    // Process payment in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Update album session as paid
+      await tx.albumSession.update({
+        where: { id: albumSession.id },
+        data: {
+          hasPaid: true,
+          shopifyOrderId: orderId,
+          paidAt: new Date(),
+          webhookProcessedAt: new Date()
+        }
+      });
+
+      // Create purchase record (idempotent - will fail if orderId already exists)
+      try {
+        await tx.purchase.create({
+          data: {
+            userId: user.id,
+            albumSessionId: albumSession.id,
+            orderId: orderId,
+            amount: amount,
+            currency: 'BRL',
+            status: 'paid',
+            paymentMethod: paymentMethod.toLowerCase().includes('pix') ? 'pix' :
+                          paymentMethod.toLowerCase().includes('credit') ? 'credit_card' :
+                          paymentMethod.toLowerCase().includes('boleto') ? 'boleto' :
+                          'other',
+            paidAt: new Date()
+          }
+        });
+      } catch (purchaseError: any) {
+        // If purchase already exists (unique constraint on orderId), that's okay
+        if (purchaseError.code === 'P2002') {
+          console.log(`ℹ️  Purchase record already exists for order ${orderId}`);
+        } else {
+          throw purchaseError;
+        }
       }
+
+      // Mark webhook as processed
+      await tx.webhookLog.update({
+        where: { id: webhookLogId! },
+        data: {
+          processed: true,
+          albumSessionId: albumSession.id,
+          processedAt: new Date()
+        }
+      });
     });
 
-    // Create purchase record
-    await prisma.purchase.create({
-      data: {
-        userId: user.id,
-        albumSessionId: albumSession.id,
-        orderId: orderId,
-        amount: amount,
-        currency: 'BRL',
-        status: 'paid',
-        paymentMethod: paymentMethod.toLowerCase().includes('pix') ? 'pix' :
-                      paymentMethod.toLowerCase().includes('credit') ? 'credit_card' :
-                      'other',
-        paidAt: new Date()
-      }
-    });
+    console.log(`✅ Payment processed successfully for user ${userEmail}, order ${orderId}`);
 
-    console.log(`Payment processed successfully for user ${userEmail}, order ${orderId}`);
+    // Send payment confirmation and access granted emails
+    try {
+      const albumData = albumSession.albumData as any;
+      const albumTitle = albumData?.analysis?.summary || 'Seu Álbum de Amor Personalizado';
+
+      // Send both emails in parallel
+      await Promise.allSettled([
+        // Payment confirmation email
+        fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/email/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'payment_confirmation',
+            data: {
+              userName: user.name,
+              userEmail: user.email,
+              orderId: orderId,
+              amount: amount,
+              albumTitle: albumTitle
+            }
+          })
+        }),
+        // Access granted email
+        fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/email/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'access_granted',
+            data: {
+              userName: user.name,
+              userEmail: user.email,
+              albumTitle: albumTitle
+            }
+          })
+        })
+      ]);
+
+      console.log(`📧 Confirmation emails sent to ${userEmail}`);
+    } catch (emailError) {
+      console.error('⚠️  Failed to send emails (non-critical):', emailError);
+      // Don't fail the webhook if emails fail
+    }
 
     return NextResponse.json({
       success: true,
       message: 'Payment processed successfully'
     });
 
-  } catch (error) {
-    console.error('Error processing Shopify webhook:', error);
+  } catch (error: any) {
+    console.error('❌ Error processing Shopify webhook:', error);
+
+    // Log error to webhook log if available
+    if (webhookLogId) {
+      try {
+        await prisma.webhookLog.update({
+          where: { id: webhookLogId },
+          data: {
+            error: error.message || 'Unknown error',
+            processedAt: new Date()
+          }
+        });
+      } catch (logError) {
+        console.error('Failed to update webhook log:', logError);
+      }
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

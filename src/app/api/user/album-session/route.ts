@@ -25,7 +25,15 @@ export async function POST(request: NextRequest) {
 
     // Find or create user
     let user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+      where: { email: session.user.email },
+      include: {
+        albumSessions: {
+          where: {
+            expiresAt: { gt: new Date() } // Not expired
+          },
+          orderBy: { createdAt: 'desc' }
+        }
+      }
     });
 
     if (!user) {
@@ -38,11 +46,36 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create album session
+    // Check if an existing album session matches this album (by createdAt timestamp)
+    const albumCreatedAt = albumData.createdAt;
+    let albumSession = null;
+
+    if (user.albumSessions) {
+      albumSession = user.albumSessions.find((session: any) => {
+        const sessionAlbumData = session.albumData as any;
+        return sessionAlbumData?.createdAt === albumCreatedAt;
+      });
+    }
+
+    // If existing session found, return it (idempotent)
+    if (albumSession) {
+      console.log(`✅ Returning existing album session: ${albumSession.id}`);
+      return NextResponse.json({
+        success: true,
+        data: {
+          albumSessionId: albumSession.id,
+          userId: user.id,
+          hasPaid: albumSession.hasPaid,
+          existing: true
+        }
+      });
+    }
+
+    // Create new album session only if none exists
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours from now
 
-    const albumSession = await prisma.albumSession.create({
+    albumSession = await prisma.albumSession.create({
       data: {
         userId: user.id,
         albumData: albumData,
@@ -50,11 +83,15 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    console.log(`🆕 Created new album session: ${albumSession.id}`);
+
     return NextResponse.json({
       success: true,
       data: {
         albumSessionId: albumSession.id,
-        userId: user.id
+        userId: user.id,
+        hasPaid: false,
+        existing: false
       }
     });
 

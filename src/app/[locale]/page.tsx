@@ -1,15 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import MultiStepStoryForm from './components/MultiStepStoryForm';
-import LoadingSpinner from './components/LoadingSpinner';
+import { useRouter } from '@/navigation';
+import { useParams } from 'next/navigation';
+import MultiStepStoryForm from '../components/MultiStepStoryForm';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { StoryAnalysis, AlbumCover, ApiResponse, StoryAnswers } from '@/types';
 
 export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState<{ current: number; total: number; step: string } | undefined>();
   const router = useRouter();
+  const params = useParams();
+  const locale = params.locale as string;
 
   // Helper function to format structured answers into a narrative story
   const formatStoryFromAnswers = (storyAnswers: StoryAnswers): string => {
@@ -47,7 +50,8 @@ Favorite music genres: ${genres.join(', ')}`;
         body: JSON.stringify({
           story,
           coupleNames: storyAnswers.names,
-          genres: storyAnswers.genres
+          genres: storyAnswers.genres,
+          locale: locale // Pass the current locale for multilingual generation
         }),
       });
 
@@ -65,6 +69,7 @@ Favorite music genres: ${genres.join(', ')}`;
         storyAnswers,
         analysis: storyAnalysis,
         createdAt: new Date().toISOString(),
+        locale: locale, // Store the current locale
       };
 
       sessionStorage.setItem('albumData', JSON.stringify(albumData));

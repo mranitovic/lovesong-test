@@ -5,7 +5,7 @@ import { ApiResponse, SongPrompt, CoupleNames } from '@/types';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { songPrompt, coupleNames, isFirstSong } = body;
+    const { songPrompt, coupleNames, isFirstSong, locale = 'en' } = body;
 
     if (!songPrompt || !coupleNames) {
       return NextResponse.json<ApiResponse<null>>({
@@ -19,7 +19,8 @@ export async function POST(request: NextRequest) {
       coupleNames as CoupleNames,
       isFirstSong || false,
       [], // userGenres - empty array for regeneration
-      0   // songIndex - always 0 since only first song can be regenerated
+      0,  // songIndex - always 0 since only first song can be regenerated
+      locale
     );
 
     return NextResponse.json<ApiResponse<{ lyrics: string }>>({

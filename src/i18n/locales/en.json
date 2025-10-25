@@ -1,0 +1,152 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "continue": "Continue →",
+    "back": "← Back",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save Changes",
+    "approve": "Approve",
+    "edit": "Edit",
+    "download": "Download",
+    "createNew": "Create New Song"
+  },
+  "metadata": {
+    "title": "AI Love Story Song Generator",
+    "description": "Turn your love story into a personalized AI-generated song"
+  },
+  "home": {
+    "title": "AI Love Story Song Generator",
+    "description": "Turn your love story into a personalized song"
+  },
+  "form": {
+    "progressIndicator": "Question {current} of {total}",
+    "names": {
+      "question": "What are your names?",
+      "placeholder": "",
+      "person1Placeholder": "Your name",
+      "person2Placeholder": "Partner's name",
+      "person1Label": "Your Name",
+      "person2Label": "Partner's Name"
+    },
+    "meeting": {
+      "question": "How did you two first meet?",
+      "placeholder": "Share the story of your first encounter..."
+    },
+    "attraction": {
+      "question": "What made you fall in love with them?",
+      "placeholder": "Describe what attracted you to each other..."
+    },
+    "memorable": {
+      "question": "Describe your most memorable moment together",
+      "placeholder": "Tell us about a special moment that stands out..."
+    },
+    "challenges": {
+      "question": "What challenges have you overcome together?",
+      "placeholder": "Share how you've grown stronger as a couple..."
+    },
+    "future": {
+      "question": "How do you envision your future together?",
+      "placeholder": "Describe your dreams and aspirations..."
+    },
+    "genres": {
+      "question": "What are your favorite music genres?",
+      "subtitle": "Select your favorite music genres to personalize your song",
+      "selected": "Selected: {genres}",
+      "selectAtLeast": "Select at least one genre to continue",
+      "finalButton": "Create My Song"
+    }
+  },
+  "genres": {
+    "rock": "Rock",
+    "pop": "Pop",
+    "jazz": "Jazz",
+    "electronic": "Electronic",
+    "country": "Country",
+    "classical": "Classical",
+    "rnb": "R&B",
+    "indie": "Indie",
+    "folk": "Folk",
+    "hip-hop": "Hip-Hop"
+  },
+  "lyricsPreview": {
+    "badge": "YOUR SONG PREVIEW",
+    "title": "Generated Lyrics",
+    "description": "Review your song lyrics. You can edit them or generate new ones.",
+    "editButton": "Edit Lyrics",
+    "regenerateButton": "Generate New Lyrics",
+    "regenerating": "Generating New Lyrics...",
+    "approveButton": "Approve Lyrics",
+    "footer": "After approval, you can proceed to payment and generate your song"
+  },
+  "songPlayer": {
+    "paymentRequired": "Payment Required",
+    "viewLyrics": "View Lyrics",
+    "hideLyrics": "Hide Lyrics",
+    "generateSong": "Generate Song",
+    "generating": "Generating...",
+    "paymentMessage": "Complete payment to generate your song",
+    "generatingMessage": "Generating song... This may take a few minutes",
+    "tryAgain": "Try again",
+    "songLyrics": "Song Lyrics",
+    "songGenerated": "Song generated:",
+    "multipleVersions": "Multiple versions generated:",
+    "version": "Version {version}",
+    "downloadSong": "Download song",
+    "lyrics": "Lyrics"
+  },
+  "payment": {
+    "preparingCheckout": "Preparing Checkout...",
+    "redirectMessage": "You will be redirected to complete the purchase in moments.",
+    "title": "Generate Your Personalized Song",
+    "subtitle": "Complete payment to generate your exclusive song for just:",
+    "price": "R$ 100.00",
+    "paymentInfo": "One-time payment • Lifetime access",
+    "benefits": {
+      "title": "What's included:",
+      "personalizedSong": "1 completely personalized song based on your story",
+      "highQuality": "High quality download (MP3)",
+      "customLyrics": "Custom lyrics with couple names",
+      "lifetimeAccess": "Lifetime access to your song"
+    },
+    "buyNow": "Buy Now",
+    "paymentMethods": "Available payment methods:",
+    "pix": "PIX",
+    "instant": "Instant",
+    "creditCard": "Credit Card",
+    "boleto": "Boleto",
+    "postPayment": "💡 After completing payment at Shopify's secure checkout, return to this page. Your song will be generated automatically!"
+  },
+  "results": {
+    "loading": "Loading...",
+    "preparingSong": "Preparing your song...",
+    "songNotFound": "Song not found",
+    "title": "Your Personalized Song",
+    "yourSong": "Your Song",
+    "paidMessage": "Your song is being generated. This may take a few minutes.",
+    "unpaidMessage": "Complete payment to generate your personalized song."
+  },
+  "loadingSpinner": {
+    "title": "Creating Your Song",
+    "message": "Please wait while we generate your personalized song...",
+    "processTime": "This process may take a few minutes...",
+    "step1": "✓ Analyzing your love story",
+    "step2": "✓ Generating your unique song"
+  },
+  "loginGate": {
+    "title": "Sign in to Continue",
+    "description": "Create your personalized AI love song",
+    "signInWith": "Sign in with Google",
+    "privacy": "We'll never post without your permission"
+  },
+  "errors": {
+    "minLength": "Please provide at least {min} characters",
+    "required": "This field is required",
+    "nameMinLength": "Please enter your name (at least 2 characters)",
+    "partnerNameMinLength": "Please enter your partner's name (at least 2 characters)",
+    "detailMinLength": "Please provide more detail (at least 20 characters)",
+    "genreRequired": "Please select at least one music genre",
+    "authenticationRequired": "You need to be authenticated",
+    "checkoutFailed": "Failed to create checkout. Please try again."
+  }
+}

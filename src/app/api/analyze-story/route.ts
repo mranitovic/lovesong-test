@@ -6,7 +6,7 @@ import { ApiResponse, StoryAnalysis, CoupleNames } from '@/types';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { story, coupleNames, genres } = body;
+    const { story, coupleNames, genres, locale = 'en' } = body;
 
     if (!story || typeof story !== 'string') {
       return NextResponse.json<ApiResponse<null>>({
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const analysis = await analyzeStory(story, coupleNames as CoupleNames, genres as string[]);
+    const analysis = await analyzeStory(story, coupleNames as CoupleNames, genres as string[], locale);
 
     return NextResponse.json<ApiResponse<StoryAnalysis>>({
       success: true,

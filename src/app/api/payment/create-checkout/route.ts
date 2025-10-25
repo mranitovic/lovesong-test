@@ -84,7 +84,8 @@ export async function POST(request: NextRequest) {
             key: 'user_email',
             value: session.user.email
           }
-        ]
+        ],
+        note: `Album Session: ${albumSessionId}` // Add to order notes as backup tracking
       }
     };
 
@@ -134,6 +135,7 @@ export async function POST(request: NextRequest) {
     }
 
     const checkoutUrl = data.data.cartCreate.cart?.checkoutUrl;
+    const shopifyCartId = data.data.cartCreate.cart?.id;
 
     if (!checkoutUrl) {
       console.error('No checkout URL in response');
@@ -141,6 +143,15 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Failed to get checkout URL' },
         { status: 500 }
       );
+    }
+
+    // Store Shopify checkout ID in AlbumSession for bidirectional tracking
+    if (shopifyCartId) {
+      await prisma.albumSession.update({
+        where: { id: albumSessionId },
+        data: { shopifyCheckoutId: shopifyCartId }
+      });
+      console.log('✅ Stored Shopify checkout ID:', shopifyCartId);
     }
 
     console.log('✅ Checkout created successfully');

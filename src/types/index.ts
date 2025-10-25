@@ -18,7 +18,7 @@ export interface StoryAnalysis {
   summary: string;
   mood: string;
   themes: string[];
-  songs: SongPrompt[];
+  songs: SongPrompt[]; // Array with exactly 1 song
 }
 
 export interface SongPrompt {
@@ -76,8 +76,8 @@ export interface Album {
   artist: string;
   story: string;
   storyAnswers?: StoryAnswers; // New structured story data
-  analysis: StoryAnalysis;
-  songs: GeneratedSong[];
+  analysis: StoryAnalysis; // Contains 1 song
+  songs: GeneratedSong[]; // Generated song(s) - typically 1-2 versions
   cover?: AlbumCover; // COMMENTED OUT: Made optional - cover generation disabled
   createdAt: Date;
 }

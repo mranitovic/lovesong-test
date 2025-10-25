@@ -16,11 +16,11 @@ export default function LoadingSpinner({ message, progress }: LoadingSpinnerProp
         <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-pink-600 mx-auto mb-6"></div>
         
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Creating Your Album
+          Criando Sua Música
         </h2>
-        
+
         <p className="text-gray-600 mb-6">
-          {message || 'Please wait while we generate your personalized love story album...'}
+          {message || 'Aguarde enquanto geramos sua música personalizada...'}
         </p>
 
         {progress && (
@@ -39,12 +39,10 @@ export default function LoadingSpinner({ message, progress }: LoadingSpinnerProp
         )}
 
         <div className="mt-8 text-sm text-gray-500">
-          <p>This process may take a few minutes...</p>
+          <p>Esse processo pode levar alguns minutos...</p>
           <ul className="mt-2 space-y-1">
-            <li>✓ Analyzing your love story</li>
-            <li>✓ Generating 5 unique songs</li>
-            {/* COMMENTED OUT: Album cover creation disabled */}
-            {/* <li>✓ Creating album cover artwork</li> */}
+            <li>✓ Analisando sua história de amor</li>
+            <li>✓ Gerando sua música única</li>
           </ul>
         </div>
       </div>

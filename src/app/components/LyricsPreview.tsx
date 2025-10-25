@@ -66,7 +66,7 @@ export default function LyricsPreview({
   return (
     <div className="bg-white rounded-lg shadow-lg p-8 max-w-4xl mx-auto">
       <div className="text-center mb-8">
-        <div className="text-sm text-pink-600 font-medium mb-2">FIRST SONG PREVIEW</div>
+        <div className="text-sm text-pink-600 font-medium mb-2">PRÉVIA DA SUA MÚSICA</div>
         <h2 className="text-3xl font-bold text-gray-900 mb-2">{song.title}</h2>
         <p className="text-gray-600">
           {song.genre} • {song.mood}
@@ -78,9 +78,9 @@ export default function LyricsPreview({
 
       <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-lg p-6 mb-8">
         <div className="text-center mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Generated Lyrics</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Letra Gerada</h3>
           <p className="text-sm text-gray-600">
-            Review the lyrics for your first song. You can edit them or generate new ones.
+            Revise a letra da sua música. Você pode editá-la ou gerar uma nova.
           </p>
         </div>
 
@@ -125,7 +125,7 @@ export default function LyricsPreview({
               onClick={handleEdit}
               className="w-full sm:w-auto px-6 py-3 border border-pink-600 text-pink-600 rounded-lg hover:bg-pink-50 font-medium transition-colors"
             >
-              Edit Lyrics
+              Editar Letra
             </button>
 
             <button
@@ -136,10 +136,10 @@ export default function LyricsPreview({
               {isRegenerating ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700 mr-2"></div>
-                  Generating New Lyrics...
+                  Gerando Nova Letra...
                 </div>
               ) : (
-                'Generate New Lyrics'
+                'Gerar Nova Letra'
               )}
             </button>
 
@@ -147,14 +147,14 @@ export default function LyricsPreview({
               onClick={handleApprove}
               className="w-full sm:w-auto px-8 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 font-medium transition-colors transform hover:scale-105"
             >
-              Approve & Create Album
+              Aprovar Letra
             </button>
           </>
         )}
       </div>
 
       <div className="text-center mt-6 text-sm text-gray-500">
-        Once approved, you'll be able to generate music for your first song
+        Após aprovar, você poderá prosseguir para o pagamento e gerar sua música
       </div>
     </div>
   );
