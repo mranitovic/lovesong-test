@@ -42,6 +42,14 @@ export async function POST(request: NextRequest) {
           email: session.user.email,
           name: session.user.name,
           image: session.user.image
+        },
+        include: {
+          albumSessions: {
+            where: {
+              expiresAt: { gt: new Date() }
+            },
+            orderBy: { createdAt: 'desc' }
+          }
         }
       });
     }

@@ -1,0 +1,96 @@
+{% comment %}
+  AI Love Story Album Generator - Embed Snippet
+
+  Installation Instructions:
+  1. Go to Shopify Admin → Online Store → Themes → Actions → Edit code
+  2. Snippets → Add a new snippet → Name: "love-album-embed"
+  3. Paste this entire file
+  4. Save
+
+  Usage:
+  Add {% render 'love-album-embed' %} to any template or page where you want the widget
+
+  Configuration:
+  - Update APP_URL below with your actual app domain
+{% endcomment %}
+
+{% comment %} Configuration - UPDATE THIS {% endcomment %}
+{% assign app_url = "https://your-app-domain.com" %}
+
+<div class="love-album-wrapper">
+  <div id="love-album-loading" class="love-album-loading">
+    <div class="spinner"></div>
+    <p>Loading AI Love Album Generator...</p>
+  </div>
+
+  <iframe
+    id="love-album-frame"
+    src="{{ app_url }}/embed?shop={{ shop.permanent_domain }}"
+    frameborder="0"
+    scrolling="no"
+    style="width: 100%; border: none; min-height: 600px; display: none;"
+    allow="payment"
+    title="AI Love Story Album Generator"
+  ></iframe>
+</div>
+
+<script>
+(function() {
+  var iframe = document.getElementById('love-album-frame');
+  var loading = document.getElementById('love-album-loading');
+
+  // Show iframe when loaded, hide loading
+  iframe.addEventListener('load', function() {
+    iframe.style.display = 'block';
+    if (loading) {
+      loading.style.display = 'none';
+    }
+  });
+
+  // Auto-resize iframe based on content
+  window.addEventListener('message', function(event) {
+    // Verify origin for security
+    if (event.origin !== '{{ app_url }}') return;
+
+    if (event.data.type === 'resize' && event.data.height) {
+      iframe.style.height = event.data.height + 'px';
+    }
+  });
+})();
+</script>
+
+<style>
+.love-album-wrapper {
+  width: 100%;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.love-album-loading {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.love-album-loading .spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #ec4899;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: love-album-spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes love-album-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .love-album-wrapper {
+    padding: 0 0.5rem;
+  }
+}
+</style>
