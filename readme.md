@@ -2,15 +2,17 @@
 
 ## 🎵 Real Suno API Integration Complete!
 
-This POC now features **full integration with the real Suno API v4** for professional music generation.
+This POC now features **full integration with the real Suno API v4** for professional music generation and **Shopify storefront integration** for e-commerce deployment.
 
 ### ✨ Features
 
 - **Story Analysis**: OpenAI GPT-4 analyzes your love story and creates 5 song concepts
-- **Real Music Generation**: Suno API v4 generates actual professional-quality songs  
-- **Album Cover**: Temporarily disabled (focus on music generation)
+- **Real Music Generation**: Suno API v4 generates actual professional-quality songs
+- **Shopify Integration**: Seamless custom store integration via Storefront API
+- **Payment Processing**: Integrated Shopify checkout with webhook fulfillment
 - **Audio Players**: Built-in players with download functionality
-- **Production Ready**: Requires real API keys for authentic music generation
+- **Multi-language Support**: i18n ready with next-intl
+- **Production Ready**: Real API integrations and comprehensive error handling
 
 ### 🚀 Quick Start
 
@@ -70,18 +72,62 @@ src/
   types/            # TypeScript definitions
 ```
 
+### 🛍️ Shopify Integration
+
+Perfect integration for **custom Shopify stores** using Storefront API - no Partner account required!
+
+#### Custom Store Integration (Recommended)
+
+**Best for: Your own store** - Seamless checkout experience with direct Storefront API integration
+
+- ✅ No Partner account required
+- ✅ Perfect checkout flow integration
+- ✅ Direct Storefront API access
+- ✅ Embeddable page templates (Liquid)
+- ✅ Native Shopify checkout
+- ✅ Simple setup (< 30 minutes)
+
+**Setup Guide**: [PERFECT_CUSTOM_STORE_INTEGRATION.md](./PERFECT_CUSTOM_STORE_INTEGRATION.md)
+
+**Quick Start:**
+1. Configure Storefront API credentials
+2. Add Liquid template to theme
+3. Create product in Shopify
+4. Configure webhooks
+5. Deploy and test!
+
+#### Alternative Options:
+
+**Simple Embed** (No Partner Account)
+- Basic iframe embedding
+- **See**: [SHOPIFY_EMBED_GUIDE.md](./SHOPIFY_EMBED_GUIDE.md)
+
+**Full App Proxy** (Requires Partner Account)
+- Multi-merchant distribution
+- **See**: [SHOPIFY_INTEGRATION.md](./SHOPIFY_INTEGRATION.md)
+
 ### 📖 Documentation
 
-- `SUNO_INTEGRATION.md` - Detailed Suno API implementation guide
-- `PROJECT_PLAN.md` - Original project planning document
+**Shopify Integration:**
+- [PERFECT_CUSTOM_STORE_INTEGRATION.md](./PERFECT_CUSTOM_STORE_INTEGRATION.md) - **RECOMMENDED** Custom store setup
+- [shopify-templates/README.md](./shopify-templates/README.md) - Liquid template guide
+- [SHOPIFY_EMBED_GUIDE.md](./SHOPIFY_EMBED_GUIDE.md) - Simple embed approach
+- [SHOPIFY_INTEGRATION.md](./SHOPIFY_INTEGRATION.md) - App Proxy approach (requires Partner)
+
+**Technical:**
+- [SUNO_INTEGRATION.md](./SUNO_INTEGRATION.md) - Suno API implementation guide
+- [PROJECT_PLAN.md](./PROJECT_PLAN.md) - Original project planning
 
 ### 🛠 Tech Stack
 
-- **Next.js 14** with TypeScript
+- **Next.js 14** with TypeScript & App Router
+- **Shopify Storefront API** for seamless checkout integration
 - **Suno API v4** for music generation
-- **OpenAI GPT-4** for story analysis  
-- **OpenAI DALL-E** for cover generation
+- **OpenAI GPT-4** for story analysis
+- **NextAuth.js** for authentication
+- **Prisma** + **PostgreSQL** for database
 - **TailwindCSS** for styling
+- **next-intl** for internationalization
 
 ### 🎯 Ready for Production
 

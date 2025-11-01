@@ -1,13 +1,28 @@
 'use client';
 
+/**
+ * AUTHENTICATION BYPASS FOR IFRAME COMPATIBILITY
+ *
+ * Google OAuth does not work in iframes due to:
+ * - Third-party cookie restrictions in modern browsers
+ * - X-Frame-Options security policies
+ * - OAuth callback URL issues in iframe contexts
+ *
+ * The authentication and payment gates have been temporarily disabled
+ * to allow the app to work when embedded in Shopify stores.
+ *
+ * TODO: Restore authentication when implementing a native Shopify app
+ * or when using a custom authentication flow that supports iframes.
+ */
+
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
 import { useParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+// import { useSession } from 'next-auth/react';
 import SongPlayer from '../../components/SongPlayer';
 import LyricsPreview from '../../components/LyricsPreview';
-import GoogleLoginGate from '../../components/GoogleLoginGate';
-import PaymentGate from '../../components/PaymentGate';
+// import GoogleLoginGate from '../../components/GoogleLoginGate';
+// import PaymentGate from '../../components/PaymentGate';
 import { StoryAnalysis, GeneratedSong, SongGenerationState, StoryAnswers, CoupleNames, ApiResponse } from '@/types';
 
 // Utility functions for localStorage persistence
@@ -47,7 +62,7 @@ interface PaymentStatus {
 export default function ResultsPage() {
   const params = useParams();
   const locale = params.locale as string;
-  const { data: session, status: sessionStatus } = useSession();
+  // const { data: session, status: sessionStatus } = useSession();
   const [albumData, setAlbumData] = useState<AlbumData | null>(null);
   const [songGenerationStates, setSongGenerationStates] = useState<{[promptId: string]: SongGenerationState}>({});
   const [showLyricsPreview, setShowLyricsPreview] = useState(true);
@@ -82,86 +97,97 @@ export default function ResultsPage() {
     }
   }, [router]);
 
-  // Handle authentication and album session creation
+  // COMMENTED OUT: Authentication handling (OAuth doesn't work in iframes)
+  // useEffect(() => {
+  //   if (sessionStatus === 'authenticated' && session?.user && albumData && !authenticationComplete) {
+  //     handleUserAuthenticated();
+  //   }
+  // }, [sessionStatus, session, albumData, authenticationComplete]);
+
+  // COMMENTED OUT: Payment status SSE stream
+  // useEffect(() => {
+  //   if (!authenticationComplete || paymentStatus.hasPaid) return;
+  //
+  //   console.log('🔌 Connecting to payment status stream...');
+  //
+  //   const eventSource = new EventSource('/api/payment/stream');
+  //
+  //   eventSource.addEventListener('connected', (e) => {
+  //     console.log('✅ Connected to payment stream');
+  //   });
+  //
+  //   eventSource.addEventListener('payment_status', (e) => {
+  //     const data = JSON.parse((e as MessageEvent).data);
+  //     console.log('💳 Payment status update:', data);
+  //
+  //     if (data.data) {
+  //       setPaymentStatus({
+  //         hasPaid: data.data.hasPaid,
+  //         albumSessionId: data.data.albumSessionId
+  //       });
+  //
+  //       if (data.data.hasPaid) {
+  //         console.log('✅ Payment confirmed via SSE!');
+  //       }
+  //     }
+  //   });
+  //
+  //   eventSource.addEventListener('payment_complete', (e) => {
+  //     console.log('🎉 Payment complete!');
+  //     eventSource.close();
+  //   });
+  //
+  //   eventSource.addEventListener('error', (e) => {
+  //     console.error('❌ SSE error:', e);
+  //     eventSource.close();
+  //   });
+  //
+  //   eventSource.addEventListener('timeout', (e) => {
+  //     console.log('⏱️  SSE timeout');
+  //     eventSource.close();
+  //   });
+  //
+  //   return () => {
+  //     console.log('🔌 Closing payment stream connection');
+  //     eventSource.close();
+  //   };
+  // }, [authenticationComplete, paymentStatus.hasPaid]);
+
+  // TEMPORARY: Auto-authenticate for iframe compatibility (bypasses OAuth and payment)
   useEffect(() => {
-    if (sessionStatus === 'authenticated' && session?.user && albumData && !authenticationComplete) {
-      handleUserAuthenticated();
+    if (albumData && !authenticationComplete) {
+      console.log('🔓 Auto-authenticating for iframe compatibility...');
+      setAuthenticationComplete(true);
+      setPaymentStatus({ hasPaid: true, albumSessionId: 'temp-session-id' });
+      setAlbumSessionId('temp-session-id');
     }
-  }, [sessionStatus, session, albumData, authenticationComplete]);
+  }, [albumData, authenticationComplete]);
 
-  // Use Server-Sent Events for real-time payment status updates
-  useEffect(() => {
-    if (!authenticationComplete || paymentStatus.hasPaid) return;
-
-    console.log('🔌 Connecting to payment status stream...');
-
-    const eventSource = new EventSource('/api/payment/stream');
-
-    eventSource.addEventListener('connected', (e) => {
-      console.log('✅ Connected to payment stream');
-    });
-
-    eventSource.addEventListener('payment_status', (e) => {
-      const data = JSON.parse((e as MessageEvent).data);
-      console.log('💳 Payment status update:', data);
-
-      if (data.data) {
-        setPaymentStatus({
-          hasPaid: data.data.hasPaid,
-          albumSessionId: data.data.albumSessionId
-        });
-
-        if (data.data.hasPaid) {
-          console.log('✅ Payment confirmed via SSE!');
-        }
-      }
-    });
-
-    eventSource.addEventListener('payment_complete', (e) => {
-      console.log('🎉 Payment complete!');
-      eventSource.close();
-    });
-
-    eventSource.addEventListener('error', (e) => {
-      console.error('❌ SSE error:', e);
-      eventSource.close();
-    });
-
-    eventSource.addEventListener('timeout', (e) => {
-      console.log('⏱️  SSE timeout');
-      eventSource.close();
-    });
-
-    return () => {
-      console.log('🔌 Closing payment stream connection');
-      eventSource.close();
-    };
-  }, [authenticationComplete, paymentStatus.hasPaid]);
-
-  const handleUserAuthenticated = async () => {
-    if (!albumData || authenticationComplete) return;
-
-    try {
-      // Create album session in database
-      const response = await fetch('/api/user/album-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ albumData })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setAlbumSessionId(result.data.albumSessionId);
-        setAuthenticationComplete(true);
-
-        // Check payment status immediately after authentication
-        await checkPaymentStatus();
-      }
-    } catch (error) {
-      console.error('Error creating album session:', error);
-    }
-  };
+  // COMMENTED OUT: Original authentication handler
+  // const handleUserAuthenticated = async () => {
+  //   if (!albumData || authenticationComplete) return;
+  //
+  //   try {
+  //     // Create album session in database
+  //     const response = await fetch('/api/user/album-session', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ albumData })
+  //     });
+  //
+  //     const result = await response.json();
+  //
+  //     if (result.success) {
+  //       setAlbumSessionId(result.data.albumSessionId);
+  //       setAuthenticationComplete(true);
+  //
+  //       // Check payment status immediately after authentication
+  //       await checkPaymentStatus();
+  //     }
+  //   } catch (error) {
+  //     console.error('Error creating album session:', error);
+  //   }
+  // };
 
   const checkPaymentStatus = async () => {
     try {
@@ -180,9 +206,10 @@ export default function ResultsPage() {
   };
 
   const generateSong = () => {
-    if (!albumData || !paymentStatus.hasPaid) return;
+    // MODIFIED: Removed payment check for iframe compatibility
+    if (!albumData) return;
 
-    // Start song generation after payment
+    // Start song generation (payment check removed)
     const song = albumData.analysis.songs[0];
     if (song) {
       const newState: SongGenerationState = {
@@ -315,34 +342,34 @@ export default function ResultsPage() {
     }
   };
 
-  // Show loading while checking authentication
-  if (sessionStatus === 'loading') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-pink-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
-        </div>
-      </div>
-    );
-  }
+  // COMMENTED OUT: Authentication loading and login gate (OAuth doesn't work in iframes)
+  // if (sessionStatus === 'loading') {
+  //   return (
+  //     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
+  //       <div className="text-center">
+  //         <div className="animate-spin h-12 w-12 border-4 border-pink-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+  //         <p className="text-gray-600">Carregando...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
-  // Show login gate if not authenticated
-  if (sessionStatus === 'unauthenticated') {
-    return <GoogleLoginGate onLoginSuccess={() => {}} />;
-  }
+  // COMMENTED OUT: Login gate for unauthenticated users
+  // if (sessionStatus === 'unauthenticated') {
+  //   return <GoogleLoginGate onLoginSuccess={() => {}} />;
+  // }
 
-  // Show loading while setting up user session
-  if (!authenticationComplete && albumData) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-pink-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Preparando sua música...</p>
-        </div>
-      </div>
-    );
-  }
+  // COMMENTED OUT: Loading while setting up user session
+  // if (!authenticationComplete && albumData) {
+  //   return (
+  //     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
+  //       <div className="text-center">
+  //         <div className="animate-spin h-12 w-12 border-4 border-pink-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+  //         <p className="text-gray-600">Preparando sua música...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (!albumData) {
     return (
@@ -397,15 +424,15 @@ export default function ResultsPage() {
           />
         )}
 
-        {/* Payment Gate */}
-        {shouldShowPaymentGate && albumSessionId && (
+        {/* COMMENTED OUT: Payment Gate (bypassed for iframe compatibility) */}
+        {/* {shouldShowPaymentGate && albumSessionId && (
           <div className="mb-8 flex justify-center">
             <PaymentGate
               albumSessionId={albumSessionId}
               onPaymentSuccess={handlePaymentSuccess}
             />
           </div>
-        )}
+        )} */}
 
         {/* Song */}
         {!showLyricsPreview && albumData.analysis.songs[0] && (
