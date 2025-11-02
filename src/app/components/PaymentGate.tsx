@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+// import { useSession } from 'next-auth/react';
 
 interface PaymentGateProps {
   albumSessionId: string;
@@ -9,15 +9,17 @@ interface PaymentGateProps {
 }
 
 export default function PaymentGate({ albumSessionId }: PaymentGateProps) {
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleBuyNow = async () => {
-    if (!session?.user?.id) {
-      setError('Você precisa estar autenticado');
-      return;
-    }
+    // MODIFIED: Remove authentication check for iframe compatibility
+    // Payment can proceed without authentication
+    // if (!session?.user?.id) {
+    //   setError('Você precisa estar autenticado');
+    //   return;
+    // }
 
     setIsCreatingCheckout(true);
     setError(null);
@@ -30,7 +32,7 @@ export default function PaymentGate({ albumSessionId }: PaymentGateProps) {
         },
         body: JSON.stringify({
           albumSessionId,
-          userId: session.user.id,
+          userId: 'anonymous-user', // Use anonymous user for iframe compatibility
         }),
       });
 
