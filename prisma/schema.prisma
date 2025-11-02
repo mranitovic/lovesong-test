@@ -81,17 +81,17 @@ model AlbumSession {
 
 model Purchase {
   id             String       @id @default(uuid())
-  userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String?      // Nullable for anonymous purchases
+  user           User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   albumSessionId String
   albumSession   AlbumSession @relation(fields: [albumSessionId], references: [id], onDelete: Cascade)
   orderId        String       @unique // Shopify order ID
-  amount         Float // R$ 100.00
+  amount         Float        // R$ 100.00
   currency       String       @default("BRL")
-  status         String // 'paid', 'refunded'
-  paymentMethod  String // 'pix', 'credit_card', 'boleto'
+  status         String       // 'paid', 'refunded'
+  paymentMethod  String       // 'pix', 'credit_card', 'boleto'
   emailSent      Boolean      @default(false) // Track if confirmation email was sent
-  emailSentAt    DateTime? // When confirmation email was sent
+  emailSentAt    DateTime?    // When confirmation email was sent
   createdAt      DateTime     @default(now())
   paidAt         DateTime
 }
