@@ -97,6 +97,29 @@ export default function ResultsPage() {
     }
   }, [router]);
 
+  // Send iframe height updates to parent (for Shopify embed)
+  useEffect(() => {
+    const sendHeightUpdate = () => {
+      const height = document.documentElement.scrollHeight;
+      window.parent.postMessage({ type: 'resize', height }, '*');
+    };
+
+    // Send initial height
+    sendHeightUpdate();
+
+    // Send height updates when content changes
+    const observer = new ResizeObserver(sendHeightUpdate);
+    observer.observe(document.body);
+
+    // Also send on window resize
+    window.addEventListener('resize', sendHeightUpdate);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', sendHeightUpdate);
+    };
+  }, [albumData, showLyricsPreview, songGenerationStates]);
+
   // COMMENTED OUT: Authentication handling (OAuth doesn't work in iframes)
   // useEffect(() => {
   //   if (sessionStatus === 'authenticated' && session?.user && albumData && !authenticationComplete) {
