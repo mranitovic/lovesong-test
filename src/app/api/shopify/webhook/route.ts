@@ -362,6 +362,21 @@ export async function POST(request: NextRequest) {
       console.log('ℹ️ Skipping email notification (anonymous purchase)');
     }
 
+    // Trigger auto-generation of songs (async, don't wait for response)
+    try {
+      console.log('🎵 Triggering auto-generation for album session:', albumSession.id);
+      fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/album/generate-after-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ albumSessionId: albumSession.id })
+      }).catch(err => {
+        console.error('⚠️ Failed to trigger auto-generation (non-critical):', err);
+      });
+    } catch (genError) {
+      console.error('⚠️ Error triggering auto-generation (non-critical):', genError);
+      // Don't fail the webhook if auto-generation trigger fails
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Payment processed successfully'
