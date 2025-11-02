@@ -17,43 +17,48 @@ function verifyShopifyWebhook(body: string, signature: string): boolean {
 
 // Extract album session ID from order (multiple methods)
 function extractAlbumSessionId(order: any): string | null {
-  // Method 1: From cart attributes
+  // Method 1: From line item properties (most reliable for custom attributes)
+  if (order.line_items && Array.isArray(order.line_items)) {
+    for (const lineItem of order.line_items) {
+      if (lineItem.properties && Array.isArray(lineItem.properties)) {
+        const albumSessionProp = lineItem.properties.find(
+          (prop: any) => prop.name === 'album_session_id'
+        );
+        if (albumSessionProp?.value) {
+          console.log(`✅ Found album_session_id in line item properties: ${albumSessionProp.value}`);
+          return albumSessionProp.value;
+        }
+      }
+    }
+  }
+
+  // Method 2: From cart/note attributes
   const cartAttribute = order.note_attributes?.find(
     (attr: any) => attr.name === 'album_session_id'
   );
   if (cartAttribute?.value) {
+    console.log(`✅ Found album_session_id in note_attributes: ${cartAttribute.value}`);
     return cartAttribute.value;
   }
 
-  // Method 2: From order note (backup)
+  // Method 3: From order note (backup)
   if (order.note) {
     const match = order.note.match(/Album Session: ([a-f0-9-]+)/i);
     if (match?.[1]) {
+      console.log(`✅ Found album_session_id in order note: ${match[1]}`);
       return match[1];
     }
   }
 
+  console.warn('⚠️ No album_session_id found in order');
   return null;
 }
 
-// Find album session using multiple matching strategies
-async function findAlbumSession(order: any, userEmail: string): Promise<any | null> {
+// Find album session using multiple matching strategies (supports anonymous purchases)
+async function findAlbumSession(order: any, userEmail: string | null): Promise<any | null> {
   const orderId = order.id.toString();
 
-  // Strategy 1: Match by shopifyCheckoutId if available
-  if (order.checkout_id) {
-    const checkoutIdGid = `gid://shopify/Checkout/${order.checkout_id}`;
-    const sessionByCheckout = await prisma.albumSession.findUnique({
-      where: { shopifyCheckoutId: checkoutIdGid }
-    });
-
-    if (sessionByCheckout) {
-      console.log(`✅ Matched album session by checkout ID: ${sessionByCheckout.id}`);
-      return sessionByCheckout;
-    }
-  }
-
-  // Strategy 2: Match by extracted album session ID from order
+  // Strategy 1: Match by extracted album session ID from order (MOST RELIABLE - works for anonymous)
   const albumSessionId = extractAlbumSessionId(order);
   if (albumSessionId) {
     const sessionById = await prisma.albumSession.findUnique({
@@ -66,7 +71,20 @@ async function findAlbumSession(order: any, userEmail: string): Promise<any | nu
     }
   }
 
-  // Strategy 3: Match by shopifyOrderId (already paid)
+  // Strategy 2: Match by shopifyCheckoutId if available
+  if (order.checkout_id) {
+    const checkoutIdGid = `gid://shopify/Checkout/${order.checkout_id}`;
+    const sessionByCheckout = await prisma.albumSession.findUnique({
+      where: { shopifyCheckoutId: checkoutIdGid }
+    });
+
+    if (sessionByCheckout) {
+      console.log(`✅ Matched album session by checkout ID: ${sessionByCheckout.id}`);
+      return sessionByCheckout;
+    }
+  }
+
+  // Strategy 3: Match by shopifyOrderId (already paid - duplicate webhook)
   const sessionByOrderId = await prisma.albumSession.findUnique({
     where: { shopifyOrderId: orderId }
   });
@@ -76,28 +94,34 @@ async function findAlbumSession(order: any, userEmail: string): Promise<any | nu
     return sessionByOrderId;
   }
 
-  // Strategy 4: Match by user email + most recent unpaid session
-  const user = await prisma.user.findUnique({
-    where: { email: userEmail }
-  });
-
-  if (user) {
-    const sessionByUser = await prisma.albumSession.findFirst({
-      where: {
-        userId: user.id,
-        hasPaid: false,
-        expiresAt: { gt: new Date() }
-      },
-      orderBy: { createdAt: 'desc' }
+  // Strategy 4: Match by user email + most recent unpaid session (only if userEmail provided)
+  if (userEmail) {
+    const user = await prisma.user.findUnique({
+      where: { email: userEmail }
     });
 
-    if (sessionByUser) {
-      console.log(`✅ Matched album session by user email (fallback): ${sessionByUser.id}`);
-      return sessionByUser;
+    if (user) {
+      const sessionByUser = await prisma.albumSession.findFirst({
+        where: {
+          userId: user.id,
+          hasPaid: false,
+          expiresAt: { gt: new Date() }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (sessionByUser) {
+        console.log(`✅ Matched album session by user email (fallback): ${sessionByUser.id}`);
+        return sessionByUser;
+      }
     }
   }
 
   console.error('❌ No album session found using any strategy');
+  console.error('  - Order ID:', orderId);
+  console.error('  - Extracted album_session_id:', albumSessionId || 'none');
+  console.error('  - Checkout ID:', order.checkout_id || 'none');
+  console.error('  - User email:', userEmail || 'none (anonymous)');
   return null;
 }
 
@@ -171,45 +195,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract user information from order
-    const userEmail = order.email;
+    const userEmail = order.email || null; // Allow null for anonymous purchases
     const amount = parseFloat(order.total_price);
     const paymentMethod = order.payment_gateway_names?.[0] || 'unknown';
 
-    if (!userEmail) {
-      await prisma.webhookLog.update({
-        where: { id: webhookLogId },
-        data: {
-          error: 'No email in order',
-          processedAt: new Date()
-        }
+    console.log('📧 Order email:', userEmail || '(anonymous)');
+
+    // Find or create user by email (only if email provided)
+    let user = null;
+    if (userEmail) {
+      user = await prisma.user.findUnique({
+        where: { email: userEmail }
       });
 
-      console.error('❌ No email in order');
-      return NextResponse.json(
-        { error: 'No email in order' },
-        { status: 400 }
-      );
-    }
-
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email: userEmail }
-    });
-
-    if (!user) {
-      await prisma.webhookLog.update({
-        where: { id: webhookLogId },
-        data: {
-          error: `User not found for email: ${userEmail}`,
-          processedAt: new Date()
-        }
-      });
-
-      console.error(`❌ User not found for email: ${userEmail}`);
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      // Create user if doesn't exist (for authenticated purchases)
+      if (!user) {
+        console.log(`📝 Creating new user for email: ${userEmail}`);
+        user = await prisma.user.create({
+          data: {
+            email: userEmail,
+            name: order.customer?.first_name ?
+              `${order.customer.first_name} ${order.customer.last_name || ''}`.trim() :
+              userEmail.split('@')[0]
+          }
+        });
+      }
+    } else {
+      console.log('ℹ️ Anonymous purchase (no email) - will match by album_session_id');
     }
 
     // Find album session using enhanced matching strategies
@@ -267,7 +279,7 @@ export async function POST(request: NextRequest) {
       try {
         await tx.purchase.create({
           data: {
-            userId: user.id,
+            userId: user?.id || null, // Null for anonymous purchases
             albumSessionId: albumSession.id,
             orderId: orderId,
             amount: amount,
@@ -280,6 +292,7 @@ export async function POST(request: NextRequest) {
             paidAt: new Date()
           }
         });
+        console.log(`✅ Purchase record created for order ${orderId} (userId: ${user?.id || 'anonymous'})`);
       } catch (purchaseError: any) {
         // If purchase already exists (unique constraint on orderId), that's okay
         if (purchaseError.code === 'P2002') {
@@ -300,49 +313,53 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    console.log(`✅ Payment processed successfully for user ${userEmail}, order ${orderId}`);
+    console.log(`✅ Payment processed successfully for ${userEmail || 'anonymous user'}, order ${orderId}`);
 
-    // Send payment confirmation and access granted emails
-    try {
-      const albumData = albumSession.albumData as any;
-      const albumTitle = albumData?.analysis?.summary || 'Seu Álbum de Amor Personalizado';
+    // Send payment confirmation and access granted emails (only if user has email)
+    if (user && userEmail) {
+      try {
+        const albumData = albumSession.albumData as any;
+        const albumTitle = albumData?.analysis?.summary || 'Seu Álbum de Amor Personalizado';
 
-      // Send both emails in parallel
-      await Promise.allSettled([
-        // Payment confirmation email
-        fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/email/send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'payment_confirmation',
-            data: {
-              userName: user.name,
-              userEmail: user.email,
-              orderId: orderId,
-              amount: amount,
-              albumTitle: albumTitle
-            }
+        // Send both emails in parallel
+        await Promise.allSettled([
+          // Payment confirmation email
+          fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/email/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'payment_confirmation',
+              data: {
+                userName: user.name,
+                userEmail: user.email,
+                orderId: orderId,
+                amount: amount,
+                albumTitle: albumTitle
+              }
+            })
+          }),
+          // Access granted email
+          fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/email/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'access_granted',
+              data: {
+                userName: user.name,
+                userEmail: user.email,
+                albumTitle: albumTitle
+              }
+            })
           })
-        }),
-        // Access granted email
-        fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/email/send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'access_granted',
-            data: {
-              userName: user.name,
-              userEmail: user.email,
-              albumTitle: albumTitle
-            }
-          })
-        })
-      ]);
+        ]);
 
-      console.log(`📧 Confirmation emails sent to ${userEmail}`);
-    } catch (emailError) {
-      console.error('⚠️  Failed to send emails (non-critical):', emailError);
-      // Don't fail the webhook if emails fail
+        console.log(`📧 Confirmation emails sent to ${userEmail}`);
+      } catch (emailError) {
+        console.error('⚠️  Failed to send emails (non-critical):', emailError);
+        // Don't fail the webhook if emails fail
+      }
+    } else {
+      console.log('ℹ️ Skipping email notification (anonymous purchase)');
     }
 
     return NextResponse.json({
