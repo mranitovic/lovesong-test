@@ -109,7 +109,7 @@ export default function LyricsPreview({
           </div>
         ) : (
           <div className="lyrics-display">
-            <div className="bg-white rounded-lg p-6 max-h-96 overflow-y-auto border border-gray-200">
+            <div className="bg-white rounded-lg p-6 max-h-64 overflow-y-auto border border-gray-200">
               <div className="text-center font-mono text-sm leading-relaxed">
                 {formatLyricsForDisplay(editedLyrics)}
               </div>
