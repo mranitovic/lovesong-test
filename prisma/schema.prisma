@@ -63,16 +63,16 @@ model VerificationToken {
 // Custom application models
 model AlbumSession {
   id                 String     @id @default(uuid())
-  userId             String
-  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  albumData          Json // Store StoryAnalysis + StoryAnswers
+  userId             String?    // Nullable for anonymous iframe purchases
+  user               User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  albumData          Json       // Store StoryAnalysis + StoryAnswers
   hasPaid            Boolean    @default(false)
   shopifyOrderId     String?    @unique
   shopifyCheckoutId  String?    @unique // Track Shopify cart/checkout ID for bidirectional tracking
-  webhookProcessedAt DateTime? // Track when webhook was processed
+  webhookProcessedAt DateTime?  // Track when webhook was processed
   createdAt          DateTime   @default(now())
   paidAt             DateTime?
-  expiresAt          DateTime // 24 hours from creation
+  expiresAt          DateTime   // 24 hours from creation
   purchases          Purchase[]
 
   @@index([shopifyCheckoutId])

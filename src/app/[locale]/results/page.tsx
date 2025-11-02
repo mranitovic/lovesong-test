@@ -176,15 +176,9 @@ export default function ResultsPage() {
   //   };
   // }, [authenticationComplete, paymentStatus.hasPaid]);
 
-  // TEMPORARY: Auto-authenticate for iframe compatibility (bypasses OAuth, but NOT payment)
-  useEffect(() => {
-    if (albumData && !authenticationComplete) {
-      console.log('🔓 Auto-authenticating for iframe compatibility...');
-      setAuthenticationComplete(true);
-      setAlbumSessionId('temp-session-id');
-      // Note: paymentStatus.hasPaid remains false - user must pay to generate song
-    }
-  }, [albumData, authenticationComplete]);
+  // REMOVED: Auto-authentication no longer sets session ID
+  // Album session is created when user approves lyrics (handleLyricsApproval)
+  // This ensures we have a real database ID for payment, not a fake temp ID
 
   // COMMENTED OUT: Original authentication handler
   // const handleUserAuthenticated = async () => {
@@ -287,7 +281,7 @@ export default function ResultsPage() {
   };
 
 
-  const handleLyricsApproval = (approvedLyrics: string) => {
+  const handleLyricsApproval = async (approvedLyrics: string) => {
     if (!albumData) return;
 
     // Update the first song's lyrics
@@ -309,6 +303,32 @@ export default function ResultsPage() {
 
     // Update sessionStorage
     sessionStorage.setItem('albumData', JSON.stringify(updatedAlbumData));
+
+    // Create anonymous album session in database for payment
+    try {
+      const response = await fetch('/api/album-session/anonymous', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ albumData: updatedAlbumData })
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.data.albumSessionId) {
+        // Store the real album session ID from database
+        setAlbumSessionId(result.data.albumSessionId);
+        setAuthenticationComplete(true);
+        console.log('✅ Anonymous album session created:', result.data.albumSessionId);
+      } else {
+        console.error('Failed to create album session:', result.error);
+        alert('Erro ao preparar pagamento. Tente novamente.');
+        return;
+      }
+    } catch (error) {
+      console.error('Error creating album session:', error);
+      alert('Erro ao preparar pagamento. Tente novamente.');
+      return;
+    }
 
     setShowLyricsPreview(false);
   };
