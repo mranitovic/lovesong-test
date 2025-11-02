@@ -62,6 +62,7 @@ interface PaymentStatus {
 export default function ResultsPage() {
   const params = useParams();
   const locale = params.locale as string;
+  const [sessionIdFromUrl, setSessionIdFromUrl] = useState<string | null>(null);
   // const { data: session, status: sessionStatus } = useSession();
   const [albumData, setAlbumData] = useState<AlbumData | null>(null);
   const [songGenerationStates, setSongGenerationStates] = useState<{[promptId: string]: SongGenerationState}>({});
@@ -71,10 +72,65 @@ export default function ResultsPage() {
   const [albumSessionId, setAlbumSessionId] = useState<string | null>(null);
   const [authenticationComplete, setAuthenticationComplete] = useState(false);
   const [firstSongGenerated, setFirstSongGenerated] = useState(false);
+  const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
   const router = useRouter();
 
-  // Load album data from sessionStorage on mount
+  // Check for sessionId in URL (paid album access)
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionId = urlParams.get('sessionId');
+      if (sessionId) {
+        console.log('🔗 Loading paid album from URL:', sessionId);
+        setSessionIdFromUrl(sessionId);
+      }
+    }
+  }, []);
+
+  // Load album data from database if sessionId in URL (paid access)
+  useEffect(() => {
+    if (!sessionIdFromUrl) return;
+
+    const loadPaidAlbum = async () => {
+      setIsLoadingFromDb(true);
+      try {
+        const response = await fetch(`/api/album/access-url?sessionId=${sessionIdFromUrl}`);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          console.log('✅ Loaded paid album from database');
+          setAlbumData(result.data.albumData);
+          setPaymentStatus({ hasPaid: result.data.hasPaid, albumSessionId: sessionIdFromUrl });
+          setAlbumSessionId(sessionIdFromUrl);
+          setAuthenticationComplete(true);
+          setShowLyricsPreview(false); // Skip lyrics preview for paid albums
+
+          // Load song states
+          const albumId = result.data.albumData.createdAt;
+          const savedSongStates = loadAlbumSongStates(albumId);
+          setSongGenerationStates(savedSongStates);
+        } else {
+          console.error('Failed to load paid album:', result.error);
+          alert('Failed to load album. Please check your access link.');
+          router.push('/');
+        }
+      } catch (error) {
+        console.error('Error loading paid album:', error);
+        alert('Error loading album.');
+        router.push('/');
+      } finally {
+        setIsLoadingFromDb(false);
+      }
+    };
+
+    loadPaidAlbum();
+  }, [sessionIdFromUrl, router]);
+
+  // Load album data from sessionStorage on mount (new albums, not paid yet)
+  useEffect(() => {
+    // Skip if loading from URL
+    if (sessionIdFromUrl) return;
+
     const data = sessionStorage.getItem('albumData');
     if (!data) {
       router.push('/');
@@ -95,7 +151,7 @@ export default function ResultsPage() {
       console.error('Failed to parse album data:', error);
       router.push('/');
     }
-  }, [router]);
+  }, [router, sessionIdFromUrl]);
 
   // Send iframe height updates to parent (for Shopify embed)
   useEffect(() => {
@@ -384,6 +440,18 @@ export default function ResultsPage() {
       setIsRegeneratingLyrics(false);
     }
   };
+
+  // Show loading while fetching paid album from database
+  if (isLoadingFromDb) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 border-4 border-pink-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando seu álbum pago...</p>
+        </div>
+      </div>
+    );
+  }
 
   // COMMENTED OUT: Authentication loading and login gate (OAuth doesn't work in iframes)
   // if (sessionStatus === 'loading') {
