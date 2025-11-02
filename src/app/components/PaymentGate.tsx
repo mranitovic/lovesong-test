@@ -21,31 +21,55 @@ export default function PaymentGate({ albumSessionId }: PaymentGateProps) {
     //   return;
     // }
 
+    console.log('🛒 [PaymentGate] User clicked "Comprar Agora"');
+    console.log('📋 [PaymentGate] Album Session ID:', albumSessionId);
+
     setIsCreatingCheckout(true);
     setError(null);
 
     try {
+      const requestBody = {
+        albumSessionId,
+        userId: 'anonymous-user', // Use anonymous user for iframe compatibility
+      };
+
+      console.log('📤 [PaymentGate] Sending checkout request:', requestBody);
+
       const response = await fetch('/api/payment/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          albumSessionId,
-          userId: 'anonymous-user', // Use anonymous user for iframe compatibility
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log('📥 [PaymentGate] Response status:', response.status);
+
       const data = await response.json();
+      console.log('📥 [PaymentGate] Response data:', data);
 
       if (data.success && data.data.checkoutUrl) {
-        // Redirect to Shopify checkout in the same window
-        window.location.href = data.data.checkoutUrl;
+        console.log('✅ [PaymentGate] Checkout created successfully!');
+        console.log('🔗 [PaymentGate] Checkout URL:', data.data.checkoutUrl);
+
+        // Send message to parent window to redirect (iframe-safe)
+        console.log('📨 [PaymentGate] Sending CHECKOUT_READY message to parent window');
+        window.parent.postMessage({
+          type: 'CHECKOUT_READY',
+          checkoutUrl: data.data.checkoutUrl
+        }, '*');
+
+        // Also redirect current window as fallback (works if not in iframe)
+        console.log('🔄 [PaymentGate] Also redirecting current window as fallback');
+        setTimeout(() => {
+          window.location.href = data.data.checkoutUrl;
+        }, 500);
       } else {
+        console.error('❌ [PaymentGate] Checkout creation failed:', data.error);
         throw new Error(data.error || 'Falha ao criar checkout');
       }
     } catch (err) {
-      console.error('Error creating checkout:', err);
+      console.error('❌ [PaymentGate] Error creating checkout:', err);
       setError('Erro ao criar checkout. Tente novamente.');
       setIsCreatingCheckout(false);
     }
