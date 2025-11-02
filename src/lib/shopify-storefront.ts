@@ -78,48 +78,76 @@ export async function createCheckout(
   };
 
   try {
-    const response = await fetch(
-      `https://${SHOPIFY_DOMAIN}/api/${API_VERSION}/graphql.json`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Storefront-Access-Token': STOREFRONT_TOKEN,
-        },
-        body: JSON.stringify({ query: mutation, variables }),
-      }
-    );
+    const endpoint = `https://${SHOPIFY_DOMAIN}/api/${API_VERSION}/graphql.json`;
+
+    console.log('🌐 [Shopify] Sending GraphQL request to Storefront API');
+    console.log('  - Endpoint:', endpoint);
+    console.log('  - Domain:', SHOPIFY_DOMAIN);
+    console.log('  - API Version:', API_VERSION);
+    console.log('  - Has Token:', !!STOREFRONT_TOKEN);
+    console.log('  - Variables:', JSON.stringify(variables, null, 2));
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Storefront-Access-Token': STOREFRONT_TOKEN,
+      },
+      body: JSON.stringify({ query: mutation, variables }),
+    });
+
+    console.log('📡 [Shopify] Response status:', response.status, response.statusText);
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('❌ [Shopify] HTTP error response:', errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('📦 [Shopify] Response data:', JSON.stringify(data, null, 2));
 
     // Check for GraphQL errors
     if (data.errors) {
-      console.error('GraphQL errors:', data.errors);
+      console.error('❌ [Shopify] GraphQL errors:', JSON.stringify(data.errors, null, 2));
       throw new Error(`GraphQL Error: ${JSON.stringify(data.errors)}`);
     }
 
     // Check for user errors
     if (data.data?.cartCreate?.userErrors?.length > 0) {
-      const error = data.data.cartCreate.userErrors[0];
-      console.error('Cart creation error:', error);
-      throw new Error(`Cart Error: ${error.message}`);
+      const userErrors = data.data.cartCreate.userErrors;
+      console.error('❌ [Shopify] Cart creation user errors:');
+      userErrors.forEach((err: any, index: number) => {
+        console.error(`   Error ${index + 1}:`, {
+          field: err.field,
+          message: err.message,
+          code: err.code
+        });
+      });
+      const firstError = userErrors[0];
+      throw new Error(`Cart Error: ${firstError.message} (field: ${firstError.field?.join(' > ') || 'unknown'})`);
     }
 
     const cart = data.data?.cartCreate?.cart;
     if (!cart || !cart.checkoutUrl) {
+      console.error('❌ [Shopify] No cart or checkout URL in response:', data);
       throw new Error('No checkout URL returned from Shopify');
     }
+
+    console.log('✅ [Shopify] Checkout created successfully');
+    console.log('  - Cart ID:', cart.id);
+    console.log('  - Checkout URL:', cart.checkoutUrl);
 
     return {
       checkoutUrl: cart.checkoutUrl,
       id: cart.id,
     };
   } catch (error) {
-    console.error('Error creating Shopify checkout:', error);
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('❌ [Shopify] CHECKOUT CREATION FAILED');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('Error:', error);
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     throw error;
   }
 }
