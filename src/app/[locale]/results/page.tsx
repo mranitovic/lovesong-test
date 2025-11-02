@@ -22,7 +22,7 @@ import { useParams } from 'next/navigation';
 import SongPlayer from '../../components/SongPlayer';
 import LyricsPreview from '../../components/LyricsPreview';
 // import GoogleLoginGate from '../../components/GoogleLoginGate';
-// import PaymentGate from '../../components/PaymentGate';
+import PaymentGate from '../../components/PaymentGate';
 import { StoryAnalysis, GeneratedSong, SongGenerationState, StoryAnswers, CoupleNames, ApiResponse } from '@/types';
 
 // Utility functions for localStorage persistence
@@ -176,13 +176,13 @@ export default function ResultsPage() {
   //   };
   // }, [authenticationComplete, paymentStatus.hasPaid]);
 
-  // TEMPORARY: Auto-authenticate for iframe compatibility (bypasses OAuth and payment)
+  // TEMPORARY: Auto-authenticate for iframe compatibility (bypasses OAuth, but NOT payment)
   useEffect(() => {
     if (albumData && !authenticationComplete) {
       console.log('🔓 Auto-authenticating for iframe compatibility...');
       setAuthenticationComplete(true);
-      setPaymentStatus({ hasPaid: true, albumSessionId: 'temp-session-id' });
       setAlbumSessionId('temp-session-id');
+      // Note: paymentStatus.hasPaid remains false - user must pay to generate song
     }
   }, [albumData, authenticationComplete]);
 
@@ -229,10 +229,10 @@ export default function ResultsPage() {
   };
 
   const generateSong = () => {
-    // MODIFIED: Removed payment check for iframe compatibility
-    if (!albumData) return;
+    // RESTORED: Payment check - song generation only after payment
+    if (!albumData || !paymentStatus.hasPaid) return;
 
-    // Start song generation (payment check removed)
+    // Start song generation after payment
     const song = albumData.analysis.songs[0];
     if (song) {
       const newState: SongGenerationState = {
@@ -447,15 +447,15 @@ export default function ResultsPage() {
           />
         )}
 
-        {/* COMMENTED OUT: Payment Gate (bypassed for iframe compatibility) */}
-        {/* {shouldShowPaymentGate && albumSessionId && (
+        {/* Payment Gate - shown after lyrics approval, before song generation */}
+        {shouldShowPaymentGate && albumSessionId && (
           <div className="mb-8 flex justify-center">
             <PaymentGate
               albumSessionId={albumSessionId}
               onPaymentSuccess={handlePaymentSuccess}
             />
           </div>
-        )} */}
+        )}
 
         {/* Song */}
         {!showLyricsPreview && albumData.analysis.songs[0] && (
