@@ -1,0 +1,91 @@
+{% comment %}
+  AI Love Album - Album Access Page Template
+
+  This template is used for email links and persistent album access.
+  It embeds an iframe that loads the user's purchased album with
+  all their songs and generation controls.
+
+  Setup in Shopify Admin:
+  1. Go to: Online Store > Themes > Edit Code
+  2. Create new template: Templates > Add a new template > Page > Name: "album"
+  3. Paste this code
+  4. In Pages: Create a new page titled "Your Album" and assign this template
+
+  The sessionId parameter will be passed via URL query string from email links.
+{% endcomment %}
+
+<div class="page-width">
+  <div class="love-album-access-wrapper">
+    <iframe
+      id="love-album-access-iframe"
+      src="https://poc-songs-album.vercel.app/embed/results{{ request.search }}"
+      width="100%"
+      height="1200"
+      frameborder="0"
+      scrolling="auto"
+      style="border: none; min-height: 800px;"
+      title="Your AI Love Album"
+      loading="eager"
+    ></iframe>
+  </div>
+</div>
+
+<style>
+  .love-album-access-wrapper {
+    max-width: 1400px;
+    margin: 60px auto;
+    padding: 0 20px;
+  }
+
+  #love-album-access-iframe {
+    display: block;
+    width: 100%;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  @media (max-width: 768px) {
+    .love-album-access-wrapper {
+      margin: 30px auto;
+      padding: 0 10px;
+    }
+
+    #love-album-access-iframe {
+      min-height: 600px;
+    }
+  }
+</style>
+
+<script>
+  (function() {
+    const iframe = document.getElementById('love-album-access-iframe');
+
+    // Auto-resize iframe based on content
+    window.addEventListener('message', function(event) {
+      // Verify origin for security
+      if (event.origin !== 'https://poc-songs-album.vercel.app') {
+        return;
+      }
+
+      if (event.data.type === 'resize' && event.data.height) {
+        iframe.style.height = event.data.height + 'px';
+      }
+    });
+
+    // Log for debugging (remove in production)
+    console.log('[Shopify Album] Iframe loaded with URL:', iframe.src);
+
+    // Optional: Track when songs are generated
+    window.addEventListener('message', function(event) {
+      if (event.origin !== 'https://poc-songs-album.vercel.app') {
+        return;
+      }
+
+      if (event.data.type === 'SONG_GENERATED') {
+        console.log('[Shopify Album] Song generated:', event.data.songTitle);
+        // Could send analytics event here
+      }
+    });
+  })();
+</script>

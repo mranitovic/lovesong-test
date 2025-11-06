@@ -81,34 +81,48 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    console.log('📡 [API Access URL] GET request received');
+    console.log('📡 [API Access URL] Full URL:', request.url);
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('sessionId');
+    console.log('📡 [API Access URL] Extracted sessionId:', sessionId);
 
     if (!sessionId) {
+      console.log('❌ [API Access URL] Missing sessionId parameter');
       return NextResponse.json(
         { success: false, error: 'Missing sessionId' },
         { status: 400 }
       );
     }
 
+    console.log('🔍 [API Access URL] Querying database for sessionId:', sessionId);
     const albumSession = await prisma.albumSession.findUnique({
       where: { id: sessionId }
     });
 
     if (!albumSession) {
+      console.log('❌ [API Access URL] Album session not found in database');
       return NextResponse.json(
         { success: false, error: 'Album session not found' },
         { status: 404 }
       );
     }
 
+    console.log('✅ [API Access URL] Album session found:', {
+      id: albumSession.id,
+      hasPaid: albumSession.hasPaid,
+      paidAt: albumSession.paidAt
+    });
+
     if (!albumSession.hasPaid) {
+      console.log('⚠️ [API Access URL] Album not paid yet');
       return NextResponse.json(
         { success: false, error: 'Album not paid' },
         { status: 403 }
       );
     }
 
+    console.log('✅ [API Access URL] Returning album data');
     return NextResponse.json({
       success: true,
       data: {
@@ -120,7 +134,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ [Access URL] Verify error:', error);
+    console.error('❌ [API Access URL] Verify error:', error);
     return NextResponse.json(
       {
         success: false,

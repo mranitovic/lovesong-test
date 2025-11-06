@@ -5,10 +5,13 @@ import { useTranslations } from 'next-intl';
 import QuestionStep from './QuestionStep';
 import ProgressIndicator from './ProgressIndicator';
 import { StoryAnswers, CoupleNames } from '@/types';
+import { MetaPixelEvents } from '@/lib/tracking';
 
 interface MultiStepStoryFormProps {
   onSubmit: (storyAnswers: StoryAnswers) => void;
   isLoading: boolean;
+  onStart?: () => void;
+  onStepChange?: (step: number) => void;
 }
 
 interface Question {
@@ -26,7 +29,7 @@ const QUESTION_IDS: Question[] = [
   { id: 'genres', type: 'genres' }
 ];
 
-export default function MultiStepStoryForm({ onSubmit, isLoading }: MultiStepStoryFormProps) {
+export default function MultiStepStoryForm({ onSubmit, isLoading, onStart, onStepChange }: MultiStepStoryFormProps) {
   const t = useTranslations('form');
   const tErrors = useTranslations('errors');
   const tCommon = useTranslations('common');
@@ -42,6 +45,7 @@ export default function MultiStepStoryForm({ onSubmit, isLoading }: MultiStepSto
     genres: []
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   // Load saved answers from localStorage on mount
   useEffect(() => {
@@ -62,6 +66,12 @@ export default function MultiStepStoryForm({ onSubmit, isLoading }: MultiStepSto
   }, [answers]);
 
   const updateAnswer = (questionId: string, value: string) => {
+    // Track user interaction on first input
+    if (!hasInteracted) {
+      setHasInteracted(true);
+      onStart?.();
+    }
+
     if (questionId === 'names') {
       try {
         const names: CoupleNames = JSON.parse(value);
@@ -124,8 +134,17 @@ export default function MultiStepStoryForm({ onSubmit, isLoading }: MultiStepSto
       return;
     }
 
+    // Track recipient selection on first step
+    if (currentStep === 1) {
+      // Use person2 name as a proxy for recipient type
+      const recipientType = answers.names.person2 || 'partner';
+      MetaPixelEvents.songRecipientSelected(recipientType);
+    }
+
     if (currentStep < QUESTION_IDS.length) {
-      setCurrentStep(prev => prev + 1);
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      onStepChange?.(nextStep);
     } else {
       // Final step - submit the form
       onSubmit(answers);
@@ -134,7 +153,9 @@ export default function MultiStepStoryForm({ onSubmit, isLoading }: MultiStepSto
 
   const handleBack = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      const prevStep = currentStep - 1;
+      setCurrentStep(prevStep);
+      onStepChange?.(prevStep);
     }
   };
 

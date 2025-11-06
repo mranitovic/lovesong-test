@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { GeneratedSong, SongPrompt, ApiResponse, TaskStartResponse, TaskPollResponse, SongGenerationState } from '@/types';
+import { MetaPixelEvents } from '@/lib/tracking';
 
 interface SongPlayerProps {
   songPrompt: SongPrompt;
@@ -184,6 +185,8 @@ export default function SongPlayer({ songPrompt, index, generationState, onGener
       audioRef.pause();
     } else {
       audioRef.play();
+      // Track song preview played
+      MetaPixelEvents.songPreviewPlayed(songId);
     }
     setIsPlaying(prev => ({ ...prev, [songId]: !prev[songId] }));
     setActiveVersion(songId);

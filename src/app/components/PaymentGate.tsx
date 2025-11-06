@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 // import { useSession } from 'next-auth/react';
+import { MetaPixelEvents } from '@/lib/tracking';
 
 interface PaymentGateProps {
   albumSessionId: string;
@@ -23,6 +24,9 @@ export default function PaymentGate({ albumSessionId }: PaymentGateProps) {
 
     console.log('🛒 [PaymentGate] User clicked "Comprar Agora"');
     console.log('📋 [PaymentGate] Album Session ID:', albumSessionId);
+
+    // Track checkout started
+    MetaPixelEvents.songCheckoutStarted(albumSessionId);
 
     setIsCreatingCheckout(true);
     setError(null);

@@ -20,6 +20,8 @@ interface PaymentConfirmationEmailProps {
   amount: number;
   albumTitle: string;
   appUrl: string;
+  albumSessionId: string;
+  shopDomain: string;
 }
 
 export const PaymentConfirmationEmail = ({
@@ -29,6 +31,8 @@ export const PaymentConfirmationEmail = ({
   amount,
   albumTitle,
   appUrl,
+  albumSessionId,
+  shopDomain,
 }: PaymentConfirmationEmailProps) => {
   const previewText = `Pagamento confirmado! Seu álbum "${albumTitle}" está pronto.`;
 
@@ -74,13 +78,13 @@ export const PaymentConfirmationEmail = ({
             </Section>
 
             <Section style={ctaSection}>
-              <Button style={button} href={`${appUrl}/results`}>
-                🎧 Ouvir Minhas Músicas
+              <Button style={button} href={`https://${shopDomain}/pages/album?sessionId=${albumSessionId}`}>
+                🎧 Acessar Meu Álbum Pago
               </Button>
             </Section>
 
             <Text style={text}>
-              Suas músicas estão prontas para serem geradas. Clique no botão acima para acessar seu álbum e gerar as músicas restantes.
+              Suas músicas estão prontas para serem acessadas e geradas. Clique no botão acima para acessar seu álbum dentro da nossa loja e começar a gerar suas músicas personalizadas.
             </Text>
 
             <Text style={footerText}>

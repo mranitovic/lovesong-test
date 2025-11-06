@@ -1,18 +1,59 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from '@/navigation';
 import { useParams } from 'next/navigation';
 import MultiStepStoryForm from '../components/MultiStepStoryForm';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { StoryAnalysis, AlbumCover, ApiResponse, StoryAnswers } from '@/types';
+import { MetaPixelEvents } from '@/lib/tracking';
 
 export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState<{ current: number; total: number; step: string } | undefined>();
+  const [hasStarted, setHasStarted] = useState(false);
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as string;
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const currentStepRef = useRef<number>(1);
+
+  // Track page view on mount
+  useEffect(() => {
+    MetaPixelEvents.songCreationPageView(1);
+
+    // Setup idle abandonment tracking (3 minutes)
+    const resetIdleTimer = () => {
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+      }
+
+      // Only track abandonment if user has started the form
+      if (hasStarted && !isLoading) {
+        idleTimerRef.current = setTimeout(() => {
+          MetaPixelEvents.songCreationAbandoned(currentStepRef.current, 'idle');
+        }, 3 * 60 * 1000); // 3 minutes
+      }
+    };
+
+    // Listen to user activity
+    const events = ['mousedown', 'keypress', 'scroll', 'touchstart'];
+    events.forEach(event => {
+      window.addEventListener(event, resetIdleTimer);
+    });
+
+    resetIdleTimer();
+
+    // Cleanup
+    return () => {
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+      }
+      events.forEach(event => {
+        window.removeEventListener(event, resetIdleTimer);
+      });
+    };
+  }, [hasStarted, isLoading]);
 
   // Helper function to format structured answers into a narrative story
   const formatStoryFromAnswers = (storyAnswers: StoryAnswers): string => {
@@ -34,6 +75,9 @@ Favorite music genres: ${genres.join(', ')}`;
   };
 
   const handleStorySubmit = async (storyAnswers: StoryAnswers) => {
+    // Track song inputs completed
+    MetaPixelEvents.songInputsCompleted();
+
     setIsLoading(true);
     setProgress({ current: 1, total: 1, step: 'Analyzing your love story...' });
 
@@ -88,9 +132,27 @@ Favorite music genres: ${genres.join(', ')}`;
     }
   };
 
+  const handleFormStart = () => {
+    if (!hasStarted) {
+      setHasStarted(true);
+      MetaPixelEvents.songCreationStarted('Shopify');
+    }
+  };
+
+  const handleStepChange = (step: number) => {
+    currentStepRef.current = step;
+  };
+
   if (isLoading) {
     return <LoadingSpinner progress={progress} />;
   }
 
-  return <MultiStepStoryForm onSubmit={handleStorySubmit} isLoading={isLoading} />;
+  return (
+    <MultiStepStoryForm
+      onSubmit={handleStorySubmit}
+      isLoading={isLoading}
+      onStart={handleFormStart}
+      onStepChange={handleStepChange}
+    />
+  );
 }
