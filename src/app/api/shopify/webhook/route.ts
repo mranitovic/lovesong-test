@@ -321,6 +321,15 @@ export async function POST(request: NextRequest) {
         const albumData = albumSession.albumData as any;
         const albumTitle = albumData?.analysis?.summary || 'Seu Álbum de Amor Personalizado';
 
+        // Extract shop domain from order
+        // Shopify webhooks include the shop domain in multiple formats
+        const shopDomain = order.shop_domain ||
+                          order.myshopify_domain ||
+                          process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN ||
+                          'your-store.myshopify.com';
+
+        console.log(`🏪 Shop domain for email links: ${shopDomain}`);
+
         // Send both emails in parallel
         await Promise.allSettled([
           // Payment confirmation email
@@ -334,7 +343,9 @@ export async function POST(request: NextRequest) {
                 userEmail: user.email,
                 orderId: orderId,
                 amount: amount,
-                albumTitle: albumTitle
+                albumTitle: albumTitle,
+                albumSessionId: albumSession.id,
+                shopDomain: shopDomain
               }
             })
           }),
@@ -347,7 +358,9 @@ export async function POST(request: NextRequest) {
               data: {
                 userName: user.name,
                 userEmail: user.email,
-                albumTitle: albumTitle
+                albumTitle: albumTitle,
+                albumSessionId: albumSession.id,
+                shopDomain: shopDomain
               }
             })
           })

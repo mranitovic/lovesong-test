@@ -16,6 +16,8 @@ interface AccessGrantedEmailProps {
   userEmail: string;
   albumTitle: string;
   appUrl: string;
+  albumSessionId: string;
+  shopDomain: string;
 }
 
 export const AccessGrantedEmail = ({
@@ -23,6 +25,8 @@ export const AccessGrantedEmail = ({
   userEmail,
   albumTitle,
   appUrl,
+  albumSessionId,
+  shopDomain,
 }: AccessGrantedEmailProps) => {
   const previewText = `Suas músicas foram desbloqueadas! Acesse seu álbum agora.`;
 
@@ -56,8 +60,8 @@ export const AccessGrantedEmail = ({
             </Section>
 
             <Section style={ctaSection}>
-              <Button style={button} href={`${appUrl}/results`}>
-                🎧 Gerar Minhas Músicas
+              <Button style={button} href={`https://${shopDomain}/pages/album?sessionId=${albumSessionId}`}>
+                🎧 Acessar Meu Álbum Pago
               </Button>
             </Section>
 

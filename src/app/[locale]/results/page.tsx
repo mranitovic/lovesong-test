@@ -24,6 +24,7 @@ import LyricsPreview from '../../components/LyricsPreview';
 // import GoogleLoginGate from '../../components/GoogleLoginGate';
 import PaymentGate from '../../components/PaymentGate';
 import { StoryAnalysis, GeneratedSong, SongGenerationState, StoryAnswers, CoupleNames, ApiResponse } from '@/types';
+import { MetaPixelEvents } from '@/lib/tracking';
 
 // Utility functions for localStorage persistence
 const getAlbumStorageKey = (albumId: string) => `album_${albumId}_songs`;
@@ -75,64 +76,73 @@ export default function ResultsPage() {
   const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
   const router = useRouter();
 
-  // Check for sessionId in URL (paid album access)
+  // Load album data on mount - check URL first, then sessionStorage
   useEffect(() => {
+    console.log('🔍 [Init] Component mounted, checking data source');
+
+    // Check if there's a sessionId in URL (paid album access)
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const sessionId = urlParams.get('sessionId');
+
       if (sessionId) {
-        console.log('🔗 Loading paid album from URL:', sessionId);
+        console.log('🔗 [Init] Found sessionId in URL:', sessionId);
         setSessionIdFromUrl(sessionId);
+
+        // Load from database
+        const loadPaidAlbum = async () => {
+          console.log('📥 [DB Load] Starting loadPaidAlbum for:', sessionId);
+          setIsLoadingFromDb(true);
+          try {
+            const apiUrl = `/api/album/access-url?sessionId=${sessionId}`;
+            console.log('📡 [DB Load] Fetching:', apiUrl);
+            const response = await fetch(apiUrl);
+            console.log('📡 [DB Load] Response status:', response.status);
+            const result = await response.json();
+            console.log('📡 [DB Load] Response data:', result);
+
+            if (result.success && result.data) {
+              console.log('✅ Loaded paid album from database');
+              console.log('📦 Album data:', result.data.albumData);
+              console.log('💰 Has paid:', result.data.hasPaid);
+              setAlbumData(result.data.albumData);
+              setPaymentStatus({ hasPaid: result.data.hasPaid, albumSessionId: sessionId });
+              setAlbumSessionId(sessionId);
+              setAuthenticationComplete(true);
+              setShowLyricsPreview(false); // Skip lyrics preview for paid albums
+
+              // Load song states
+              const albumId = result.data.albumData.createdAt;
+              const savedSongStates = loadAlbumSongStates(albumId);
+              setSongGenerationStates(savedSongStates);
+              console.log('🎵 Loaded song states:', savedSongStates);
+            } else {
+              console.error('❌ Failed to load paid album:', result.error);
+              alert('Failed to load album. Please check your access link.');
+              router.push('/');
+            }
+          } catch (error) {
+            console.error('❌ Error loading paid album:', error);
+            alert('Error loading album.');
+            router.push('/');
+          } finally {
+            setIsLoadingFromDb(false);
+            console.log('🏁 [DB Load] Finished loading');
+          }
+        };
+
+        loadPaidAlbum();
+        return; // Exit early, don't check sessionStorage
       }
     }
-  }, []);
 
-  // Load album data from database if sessionId in URL (paid access)
-  useEffect(() => {
-    if (!sessionIdFromUrl) return;
-
-    const loadPaidAlbum = async () => {
-      setIsLoadingFromDb(true);
-      try {
-        const response = await fetch(`/api/album/access-url?sessionId=${sessionIdFromUrl}`);
-        const result = await response.json();
-
-        if (result.success && result.data) {
-          console.log('✅ Loaded paid album from database');
-          setAlbumData(result.data.albumData);
-          setPaymentStatus({ hasPaid: result.data.hasPaid, albumSessionId: sessionIdFromUrl });
-          setAlbumSessionId(sessionIdFromUrl);
-          setAuthenticationComplete(true);
-          setShowLyricsPreview(false); // Skip lyrics preview for paid albums
-
-          // Load song states
-          const albumId = result.data.albumData.createdAt;
-          const savedSongStates = loadAlbumSongStates(albumId);
-          setSongGenerationStates(savedSongStates);
-        } else {
-          console.error('Failed to load paid album:', result.error);
-          alert('Failed to load album. Please check your access link.');
-          router.push('/');
-        }
-      } catch (error) {
-        console.error('Error loading paid album:', error);
-        alert('Error loading album.');
-        router.push('/');
-      } finally {
-        setIsLoadingFromDb(false);
-      }
-    };
-
-    loadPaidAlbum();
-  }, [sessionIdFromUrl, router]);
-
-  // Load album data from sessionStorage on mount (new albums, not paid yet)
-  useEffect(() => {
-    // Skip if loading from URL
-    if (sessionIdFromUrl) return;
-
+    // No sessionId in URL, try loading from sessionStorage (new album flow)
+    console.log('🔍 [SessionStorage] No URL sessionId, checking sessionStorage');
     const data = sessionStorage.getItem('albumData');
+    console.log('📦 [SessionStorage] Data from sessionStorage:', data ? 'exists' : 'null');
+
     if (!data) {
+      console.log('❌ [SessionStorage] No albumData, redirecting to home');
       router.push('/');
       return;
     }
@@ -146,12 +156,12 @@ export default function ResultsPage() {
       const savedSongStates = loadAlbumSongStates(albumId);
       setSongGenerationStates(savedSongStates);
 
-      console.log(`Loaded ${Object.keys(savedSongStates).length} song states from localStorage for album ${albumId}`);
+      console.log(`✅ [SessionStorage] Loaded ${Object.keys(savedSongStates).length} song states from localStorage for album ${albumId}`);
     } catch (error) {
-      console.error('Failed to parse album data:', error);
+      console.error('❌ [SessionStorage] Failed to parse album data:', error);
       router.push('/');
     }
-  }, [router, sessionIdFromUrl]);
+  }, [router]);
 
   // Send iframe height updates to parent (for Shopify embed)
   useEffect(() => {
@@ -391,6 +401,10 @@ export default function ResultsPage() {
 
   const regenerateLyrics = async () => {
     if (!albumData) return;
+
+    // Track lyrics regeneration
+    const songId = albumData.analysis.songs[0]?.id || 'unknown';
+    MetaPixelEvents.songPreviewRegenerated(songId);
 
     setIsRegeneratingLyrics(true);
     try {

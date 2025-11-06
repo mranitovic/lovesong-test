@@ -29,7 +29,9 @@ export async function POST(request: NextRequest) {
             orderId: data.orderId,
             amount: data.amount,
             albumTitle: data.albumTitle,
-            appUrl
+            appUrl,
+            albumSessionId: data.albumSessionId,
+            shopDomain: data.shopDomain || process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'your-store.myshopify.com'
           })
         });
         break;
@@ -42,7 +44,9 @@ export async function POST(request: NextRequest) {
             userName: data.userName,
             userEmail: data.userEmail,
             albumTitle: data.albumTitle,
-            appUrl
+            appUrl,
+            albumSessionId: data.albumSessionId,
+            shopDomain: data.shopDomain || process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'your-store.myshopify.com'
           })
         });
         break;
