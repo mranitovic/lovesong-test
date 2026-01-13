@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
     //   );
     // }
 
-    const { albumSessionId, userId } = await request.json();
-    console.log('📋 [API] Request body:', { albumSessionId, userId });
+    const { albumSessionId, userId, cartToken, email } = await request.json();
+    console.log('📋 [API] Request body:', { albumSessionId, userId, cartToken: cartToken ? 'present' : 'none', email });
 
     if (!albumSessionId) {
       console.error('❌ [API] Missing albumSessionId in request');
@@ -81,42 +81,104 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🏪 [API] Creating Shopify checkout...');
-    console.log('  - Album Session ID:', albumSessionId);
-    console.log('  - Product Variant ID:', variantId);
-    console.log('  - Merchandise GID:', `gid://shopify/ProductVariant/${variantId}`);
+    let checkoutUrl: string;
+    let checkoutId: string;
 
-    // Create checkout using Storefront API
-    const checkout = await createCheckout(
-      [
+    // NEW: Check if cart token exists (Shopify redirect flow)
+    if (cartToken) {
+      console.log('🛒 [API] Cart token detected - using CART UPDATE flow');
+      console.log('  - Cart Token:', cartToken);
+      console.log('  - Album Session ID:', albumSessionId);
+
+      // Extract song details from album session
+      const albumData = albumSession.albumData as any;
+      const songTitle = albumData?.analysis?.songs?.[0]?.title || albumData?.songs?.[0]?.title;
+      const coupleNames = albumData?.storyAnswers?.names
+        ? `${albumData.storyAnswers.names.person1} & ${albumData.storyAnswers.names.person2}`
+        : '';
+
+      console.log('  - Song Title:', songTitle);
+      console.log('  - Couple Names:', coupleNames);
+
+      // Update existing cart with song metadata
+      const updateResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/shopify/update-cart`,
         {
-          merchandiseId: `gid://shopify/ProductVariant/${variantId}`,
-          quantity: 1,
-          attributes: [
-            { key: 'album_session_id', value: albumSessionId },
-            { key: 'user_email', value: 'anonymous@iframe-purchase.com' }, // Anonymous for iframe
-          ],
-        },
-      ],
-      `Album Session: ${albumSessionId}` // Order note for backup tracking
-    );
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cartToken,
+            songDetails: {
+              albumSessionId,
+              title: songTitle,
+              coupleNames,
+              email: email || 'anonymous@lovestories.ai',
+            }
+          })
+        }
+      );
+
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json();
+        console.error('❌ [API] Failed to update cart:', errorData);
+        throw new Error(errorData.error || 'Failed to update cart');
+      }
+
+      const updateData = await updateResponse.json();
+      console.log('✅ [API] Cart updated successfully!');
+      console.log('  - Checkout URL:', updateData.checkoutUrl);
+      console.log('  - Checkout ID:', updateData.checkoutId);
+
+      checkoutUrl = updateData.checkoutUrl;
+      checkoutId = updateData.checkoutId;
+
+    } else {
+      console.log('🏪 [API] No cart token - using NEW CHECKOUT flow');
+      console.log('  - Album Session ID:', albumSessionId);
+      console.log('  - Product Variant ID:', variantId);
+      console.log('  - Merchandise GID:', `gid://shopify/ProductVariant/${variantId}`);
+
+      // Create new checkout using Storefront API (existing flow)
+      const checkout = await createCheckout(
+        [
+          {
+            merchandiseId: `gid://shopify/ProductVariant/${variantId}`,
+            quantity: 1,
+            attributes: [
+              { key: 'album_session_id', value: albumSessionId },
+              { key: 'user_email', value: email || 'anonymous@iframe-purchase.com' },
+            ],
+          },
+        ],
+        `Album Session: ${albumSessionId}` // Order note for backup tracking
+      );
+
+      console.log('✅ [API] Checkout created successfully!');
+      console.log('  - Checkout ID:', checkout.id);
+      console.log('  - Checkout URL:', checkout.checkoutUrl);
+
+      checkoutUrl = checkout.checkoutUrl;
+      checkoutId = checkout.id;
+    }
 
     console.log('💾 [API] Storing checkout ID in database...');
     // Store Shopify checkout ID in AlbumSession for bidirectional tracking
     await prisma.albumSession.update({
       where: { id: albumSessionId },
-      data: { shopifyCheckoutId: checkout.id },
+      data: { shopifyCheckoutId: checkoutId },
     });
 
-    console.log('✅ [API] Checkout created successfully!');
-    console.log('  - Checkout ID:', checkout.id);
-    console.log('  - Checkout URL:', checkout.checkoutUrl);
+    console.log('✅ [API] Payment flow completed successfully!');
+    console.log('  - Flow type:', cartToken ? 'CART_UPDATE' : 'NEW_CHECKOUT');
+    console.log('  - Checkout ID:', checkoutId);
+    console.log('  - Checkout URL:', checkoutUrl);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     return NextResponse.json({
       success: true,
       data: {
-        checkoutUrl: checkout.checkoutUrl,
+        checkoutUrl,
+        checkoutId,
       },
     });
 

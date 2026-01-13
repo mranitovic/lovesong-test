@@ -32,12 +32,27 @@ export default function PaymentGate({ albumSessionId }: PaymentGateProps) {
     setError(null);
 
     try {
+      // NEW: Check for cart token from Shopify redirect
+      const cartToken = sessionStorage.getItem('shopify_cart_token');
+
+      if (cartToken) {
+        console.log('🛒 [PaymentGate] Cart token found - using cart update flow');
+        console.log('  - Cart token:', cartToken);
+      } else {
+        console.log('🏪 [PaymentGate] No cart token - using new checkout flow');
+      }
+
       const requestBody = {
         albumSessionId,
         userId: 'anonymous-user', // Use anonymous user for iframe compatibility
+        cartToken: cartToken || undefined, // NEW: Pass cart token if exists
+        email: 'anonymous@lovestories.ai',
       };
 
-      console.log('📤 [PaymentGate] Sending checkout request:', requestBody);
+      console.log('📤 [PaymentGate] Sending checkout request:', {
+        ...requestBody,
+        cartToken: cartToken ? 'present' : 'none',
+      });
 
       const response = await fetch('/api/payment/create-checkout', {
         method: 'POST',
@@ -54,7 +69,14 @@ export default function PaymentGate({ albumSessionId }: PaymentGateProps) {
 
       if (data.success && data.data.checkoutUrl) {
         console.log('✅ [PaymentGate] Checkout created successfully!');
-        console.log('🔗 [PaymentGate] Checkout URL:', data.data.checkoutUrl);
+        console.log('  - Flow type:', cartToken ? 'CART_UPDATE' : 'NEW_CHECKOUT');
+        console.log('  - Checkout URL:', data.data.checkoutUrl);
+
+        // NEW: Clear cart token after successful checkout creation
+        if (cartToken) {
+          sessionStorage.removeItem('shopify_cart_token');
+          console.log('🧹 [PaymentGate] Cleared cart token from sessionStorage');
+        }
 
         // Send message to parent window to redirect (iframe-safe)
         console.log('📨 [PaymentGate] Sending CHECKOUT_READY message to parent window');

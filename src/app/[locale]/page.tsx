@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from '@/navigation';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import MultiStepStoryForm from '../components/MultiStepStoryForm';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { StoryAnalysis, AlbumCover, ApiResponse, StoryAnswers } from '@/types';
@@ -14,9 +14,21 @@ export default function HomePage() {
   const [hasStarted, setHasStarted] = useState(false);
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const locale = params.locale as string;
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
   const currentStepRef = useRef<number>(1);
+
+  // Capture cart token from URL on mount (Shopify redirect flow)
+  useEffect(() => {
+    const cartToken = searchParams.get('cart_token');
+
+    if (cartToken) {
+      // Store cart token in sessionStorage for use during checkout
+      sessionStorage.setItem('shopify_cart_token', cartToken);
+      console.log('[Cart Token] Stored cart token from Shopify:', cartToken);
+    }
+  }, [searchParams]);
 
   // Track page view on mount
   useEffect(() => {
