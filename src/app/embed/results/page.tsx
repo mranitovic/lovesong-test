@@ -284,7 +284,16 @@ export default function EmbedResultsPage() {
                 songPrompt={prompt}
                 index={index}
                 generationState={state}
+                onGenerationStateChange={(promptId, newState) => {
+                  const newStates = {
+                    ...songGenerationStates,
+                    [promptId]: newState
+                  };
+                  setSongGenerationStates(newStates);
+                  saveAlbumSongStates(albumData.createdAt, newStates);
+                }}
                 isGenerationAllowed={true}
+                albumSessionId={albumSessionId || undefined}
               />
             );
           })}

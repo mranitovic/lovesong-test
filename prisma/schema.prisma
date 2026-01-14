@@ -66,6 +66,7 @@ model AlbumSession {
   userId             String?    // Nullable for anonymous iframe purchases
   user               User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   albumData          Json       // Store StoryAnalysis + StoryAnswers
+  generatedSongs     Json?      // Store generated songs with permanent URLs
   hasPaid            Boolean    @default(false)
   shopifyOrderId     String?    @unique
   shopifyCheckoutId  String?    @unique // Track Shopify cart/checkout ID for bidirectional tracking

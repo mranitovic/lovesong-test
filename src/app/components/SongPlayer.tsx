@@ -10,9 +10,10 @@ interface SongPlayerProps {
   generationState?: SongGenerationState;
   onGenerationStateChange?: (promptId: string, state: SongGenerationState) => void;
   isGenerationAllowed?: boolean;
+  albumSessionId?: string;
 }
 
-export default function SongPlayer({ songPrompt, index, generationState, onGenerationStateChange, isGenerationAllowed = true }: SongPlayerProps) {
+export default function SongPlayer({ songPrompt, index, generationState, onGenerationStateChange, isGenerationAllowed = true, albumSessionId }: SongPlayerProps) {
   const [isPlaying, setIsPlaying] = useState<{[key: string]: boolean}>({});
   const [currentTime, setCurrentTime] = useState<{[key: string]: number}>({});
   const [duration, setDuration] = useState<{[key: string]: number}>({});
@@ -106,7 +107,7 @@ export default function SongPlayer({ songPrompt, index, generationState, onGener
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ taskId }),
+        body: JSON.stringify({ taskId, albumSessionId }),
       });
 
       const result: ApiResponse<TaskPollResponse> = await response.json();
@@ -227,6 +228,8 @@ export default function SongPlayer({ songPrompt, index, generationState, onGener
     const link = document.createElement('a');
     link.href = song.audioUrl;
     link.download = `${song.title}${song.version ? ` - Version ${song.version}` : ''}.mp3`;
+    link.target = '_blank'; // Open in new tab to avoid navigation
+    link.rel = 'noopener noreferrer'; // Security best practice
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

@@ -163,10 +163,26 @@ export async function POST(request: NextRequest) {
 
     console.log('💾 [API] Storing checkout ID in database...');
     // Store Shopify checkout ID in AlbumSession for bidirectional tracking
-    await prisma.albumSession.update({
-      where: { id: albumSessionId },
-      data: { shopifyCheckoutId: checkoutId },
-    });
+    // Only update if not already set or if it's different
+    if (!albumSession.shopifyCheckoutId || albumSession.shopifyCheckoutId !== checkoutId) {
+      try {
+        await prisma.albumSession.update({
+          where: { id: albumSessionId },
+          data: { shopifyCheckoutId: checkoutId },
+        });
+        console.log('✅ [API] Checkout ID stored in database');
+      } catch (error: any) {
+        // Handle unique constraint violation (P2002)
+        if (error.code === 'P2002') {
+          console.log('⚠️ [API] Checkout ID already used by another session, skipping update');
+          // This is OK - just means the checkout was already associated with another session
+        } else {
+          throw error; // Re-throw other errors
+        }
+      }
+    } else {
+      console.log('ℹ️ [API] Checkout ID already set and unchanged, skipping update');
+    }
 
     console.log('✅ [API] Payment flow completed successfully!');
     console.log('  - Flow type:', cartToken ? 'CART_UPDATE' : 'NEW_CHECKOUT');

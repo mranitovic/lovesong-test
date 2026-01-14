@@ -315,6 +315,17 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Payment processed successfully for ${userEmail || 'anonymous user'}, order ${orderId}`);
 
+    // ============================================================================
+    // RESEND EMAIL SENDING - COMMENTED OUT
+    // ============================================================================
+    // Using Shopify's order confirmation email instead (customized with album access link)
+    // Customer will receive Shopify order confirmation with album_session_id in order attributes
+    // See: SHOPIFY_EMAIL_CUSTOMIZATION.md for how to customize Shopify email template
+    // ============================================================================
+
+    console.log(`📧 Customer will receive Shopify order confirmation email with album access link`);
+
+    /* COMMENTED OUT - Using Shopify email template instead
     // Send payment confirmation and access granted emails (only if user has email)
     if (user && userEmail) {
       try {
@@ -374,6 +385,7 @@ export async function POST(request: NextRequest) {
     } else {
       console.log('ℹ️ Skipping email notification (anonymous purchase)');
     }
+    */ // END COMMENTED OUT EMAIL SENDING
 
     // Trigger auto-generation of songs (async, don't wait for response)
     try {

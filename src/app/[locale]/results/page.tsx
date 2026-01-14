@@ -580,6 +580,7 @@ export default function ResultsPage() {
                 generationState={songGenerationStates[albumData.analysis.songs[0].id]}
                 onGenerationStateChange={handleGenerationStateChange}
                 isGenerationAllowed={isGenerationAllowed()}
+                albumSessionId={albumSessionId || undefined}
               />
             </div>
 
