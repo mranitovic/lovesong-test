@@ -81,24 +81,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Extract song details from album session (used by both flows)
+    const albumData = albumSession.albumData as any;
+    const songTitle = albumData?.analysis?.songs?.[0]?.title || albumData?.songs?.[0]?.title || 'Custom Love Story Song';
+    const coupleNames = albumData?.storyAnswers?.names
+      ? `${albumData.storyAnswers.names.person1} & ${albumData.storyAnswers.names.person2}`
+      : '';
+    const userEmail = email || 'anonymous@lovestories.ai';
+
+    console.log('📝 [API] Song details extracted:');
+    console.log('  - Song Title:', songTitle);
+    console.log('  - Couple Names:', coupleNames);
+    console.log('  - User Email:', userEmail);
+
+    // Common order attributes for both flows
+    const orderAttributes = [
+      { key: 'album_session_id', value: albumSessionId },
+      { key: 'song_title', value: songTitle },
+      { key: 'couple_names', value: coupleNames },
+      { key: 'user_email', value: userEmail },
+      { key: 'created_at', value: new Date().toISOString() },
+    ];
+
     let checkoutUrl: string;
     let checkoutId: string;
 
-    // NEW: Check if cart token exists (Shopify redirect flow)
+    // Check if cart token exists (Shopify redirect flow)
     if (cartToken) {
       console.log('🛒 [API] Cart token detected - using CART UPDATE flow');
       console.log('  - Cart Token:', cartToken);
-      console.log('  - Album Session ID:', albumSessionId);
-
-      // Extract song details from album session
-      const albumData = albumSession.albumData as any;
-      const songTitle = albumData?.analysis?.songs?.[0]?.title || albumData?.songs?.[0]?.title;
-      const coupleNames = albumData?.storyAnswers?.names
-        ? `${albumData.storyAnswers.names.person1} & ${albumData.storyAnswers.names.person2}`
-        : '';
-
-      console.log('  - Song Title:', songTitle);
-      console.log('  - Couple Names:', coupleNames);
 
       // Update existing cart with song metadata
       const updateResponse = await fetch(
@@ -112,7 +123,7 @@ export async function POST(request: NextRequest) {
               albumSessionId,
               title: songTitle,
               coupleNames,
-              email: email || 'anonymous@lovestories.ai',
+              email: userEmail,
             }
           })
         }
@@ -138,8 +149,8 @@ export async function POST(request: NextRequest) {
       console.log('  - Product Variant ID:', variantId);
       console.log('  - Merchandise GID:', `gid://shopify/ProductVariant/${variantId}`);
 
-      // Create new checkout using Storefront API (existing flow)
-      // Use cart-level attributes (instead of line item attributes) so they appear in order emails
+      // Create new checkout using Storefront API
+      // Use cart-level attributes (order attributes) so they appear in order emails
       const checkout = await createCheckout(
         [
           {
@@ -148,10 +159,7 @@ export async function POST(request: NextRequest) {
           },
         ],
         `Album Session: ${albumSessionId}`, // Order note for backup tracking
-        [
-          { key: 'album_session_id', value: albumSessionId },
-          { key: 'user_email', value: email || 'anonymous@lovestories.ai' },
-        ]
+        orderAttributes
       );
 
       console.log('✅ [API] Checkout created successfully!');
