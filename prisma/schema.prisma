@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String?
+  email         String         @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime       @default(now())
+  accounts      Account[]
+  sessions      Session[]
+  albumSessions AlbumSession[]
+  purchases     Purchase[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Custom application models
+model AlbumSession {
+  id                 String     @id @default(uuid())
+  userId             String?    // Nullable for anonymous iframe purchases
+  user               User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  albumData          Json       // Store StoryAnalysis + StoryAnswers
+  generatedSongs     Json?      // Store generated songs with permanent URLs
+  hasPaid            Boolean    @default(false)
+  shopifyOrderId     String?    @unique
+  shopifyCheckoutId  String?    @unique // Track Shopify cart/checkout ID for bidirectional tracking
+  webhookProcessedAt DateTime?  // Track when webhook was processed
+  createdAt          DateTime   @default(now())
+  paidAt             DateTime?
+  expiresAt          DateTime   // 24 hours from creation
+  purchases          Purchase[]
+
+  @@index([shopifyCheckoutId])
+  @@index([userId, hasPaid])
+}
+
+model Purchase {
+  id             String       @id @default(uuid())
+  userId         String?      // Nullable for anonymous purchases
+  user           User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  albumSessionId String
+  albumSession   AlbumSession @relation(fields: [albumSessionId], references: [id], onDelete: Cascade)
+  orderId        String       @unique // Shopify order ID
+  amount         Float        // R$ 100.00
+  currency       String       @default("BRL")
+  status         String       // 'paid', 'refunded'
+  paymentMethod  String       // 'pix', 'credit_card', 'boleto'
+  emailSent      Boolean      @default(false) // Track if confirmation email was sent
+  emailSentAt    DateTime?    // When confirmation email was sent
+  createdAt      DateTime     @default(now())
+  paidAt         DateTime
+}
+
+// Webhook logging for debugging and retry mechanism
+model WebhookLog {
+  id             String    @id @default(uuid())
+  topic          String // e.g., 'orders/paid'
+  shopifyOrderId String? // Order ID from webhook payload
+  payload        Json // Full webhook payload
+  signature      String // HMAC signature for verification
+  verified       Boolean // Whether signature was verified
+  processed      Boolean   @default(false) // Whether webhook was successfully processed
+  error          String?   @db.Text // Error message if processing failed
+  albumSessionId String? // Matched album session (if found)
+  createdAt      DateTime  @default(now())
+  processedAt    DateTime?
+
+  @@index([shopifyOrderId])
+  @@index([topic, createdAt])
+  @@index([processed, createdAt])
+}

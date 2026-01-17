@@ -1,0 +1,79 @@
+{% comment %}
+  AI Love Album - Thank You Page Template
+
+  This template is shown after successful payment.
+  It embeds an iframe that displays the thank-you message and
+  provides access to the purchased album.
+
+  Setup in Shopify Admin:
+  1. Go to: Online Store > Themes > Edit Code
+  2. Create new template: Templates > Add a new template > Page > Name: "thank-you"
+  3. Paste this code
+  4. In Pages: Create a new page titled "Thank You" and assign this template
+
+  The sessionId parameter will be passed via URL query string from checkout redirect.
+{% endcomment %}
+
+<div class="page-width">
+  <div class="love-album-thank-you-wrapper">
+    <iframe
+      id="love-album-thank-you-iframe"
+      src="https://poc-songs-album.vercel.app/embed/thank-you{{ request.search }}"
+      width="100%"
+      height="800"
+      frameborder="0"
+      scrolling="auto"
+      style="border: none; min-height: 600px;"
+      title="Thank You - Your Album is Ready"
+      loading="eager"
+    ></iframe>
+  </div>
+</div>
+
+<style>
+  .love-album-thank-you-wrapper {
+    max-width: 1200px;
+    margin: 60px auto;
+    padding: 0 20px;
+  }
+
+  #love-album-thank-you-iframe {
+    display: block;
+    width: 100%;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  @media (max-width: 768px) {
+    .love-album-thank-you-wrapper {
+      margin: 30px auto;
+      padding: 0 10px;
+    }
+
+    #love-album-thank-you-iframe {
+      min-height: 500px;
+    }
+  }
+</style>
+
+<script>
+  (function() {
+    const iframe = document.getElementById('love-album-thank-you-iframe');
+
+    // Auto-resize iframe based on content
+    window.addEventListener('message', function(event) {
+      // Verify origin for security
+      if (event.origin !== 'https://poc-songs-album.vercel.app') {
+        return;
+      }
+
+      if (event.data.type === 'resize' && event.data.height) {
+        iframe.style.height = event.data.height + 'px';
+      }
+    });
+
+    // Log for debugging (remove in production)
+    console.log('[Shopify Thank You] Iframe loaded with URL:', iframe.src);
+  })();
+</script>
