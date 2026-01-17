@@ -139,18 +139,19 @@ export async function POST(request: NextRequest) {
       console.log('  - Merchandise GID:', `gid://shopify/ProductVariant/${variantId}`);
 
       // Create new checkout using Storefront API (existing flow)
+      // Use cart-level attributes (instead of line item attributes) so they appear in order emails
       const checkout = await createCheckout(
         [
           {
             merchandiseId: `gid://shopify/ProductVariant/${variantId}`,
             quantity: 1,
-            attributes: [
-              { key: 'album_session_id', value: albumSessionId },
-              { key: 'user_email', value: email || 'anonymous@iframe-purchase.com' },
-            ],
           },
         ],
-        `Album Session: ${albumSessionId}` // Order note for backup tracking
+        `Album Session: ${albumSessionId}`, // Order note for backup tracking
+        [
+          { key: 'album_session_id', value: albumSessionId },
+          { key: 'user_email', value: email || 'anonymous@lovestories.ai' },
+        ]
       );
 
       console.log('✅ [API] Checkout created successfully!');
