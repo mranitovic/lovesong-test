@@ -17,12 +17,27 @@ function verifyShopifyWebhook(body: string, signature: string): boolean {
 
 // Extract album session ID from order (multiple methods)
 function extractAlbumSessionId(order: any): string | null {
-  // Method 1: From line item properties (most reliable for custom attributes)
+  console.log('🔍 [Webhook] Extracting album_session_id from order...');
+  console.log('  - note_attributes:', JSON.stringify(order.note_attributes));
+  console.log('  - note:', order.note);
+
+  // Method 1: From note_attributes (cart-level attributes - our primary method)
+  if (order.note_attributes && Array.isArray(order.note_attributes)) {
+    const cartAttribute = order.note_attributes.find(
+      (attr: any) => attr.name === 'album_session_id' || attr.key === 'album_session_id'
+    );
+    if (cartAttribute?.value) {
+      console.log(`✅ Found album_session_id in note_attributes: ${cartAttribute.value}`);
+      return cartAttribute.value;
+    }
+  }
+
+  // Method 2: From line item properties (legacy - for old orders)
   if (order.line_items && Array.isArray(order.line_items)) {
     for (const lineItem of order.line_items) {
       if (lineItem.properties && Array.isArray(lineItem.properties)) {
         const albumSessionProp = lineItem.properties.find(
-          (prop: any) => prop.name === 'album_session_id'
+          (prop: any) => prop.name === 'album_session_id' || prop.key === 'album_session_id'
         );
         if (albumSessionProp?.value) {
           console.log(`✅ Found album_session_id in line item properties: ${albumSessionProp.value}`);
@@ -30,15 +45,6 @@ function extractAlbumSessionId(order: any): string | null {
         }
       }
     }
-  }
-
-  // Method 2: From cart/note attributes
-  const cartAttribute = order.note_attributes?.find(
-    (attr: any) => attr.name === 'album_session_id'
-  );
-  if (cartAttribute?.value) {
-    console.log(`✅ Found album_session_id in note_attributes: ${cartAttribute.value}`);
-    return cartAttribute.value;
   }
 
   // Method 3: From order note (backup)
