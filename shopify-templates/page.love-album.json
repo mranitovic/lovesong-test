@@ -1,0 +1,9 @@
+{
+  "name": "Love Album Page",
+  "sections": {
+    "main": {
+      "type": "love-album-page-section"
+    }
+  },
+  "order": ["main"]
+}

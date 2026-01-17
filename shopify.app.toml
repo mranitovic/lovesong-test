@@ -1,0 +1,57 @@
+# Shopify App Configuration
+# Learn more: https://shopify.dev/docs/apps/build/app-configuration
+
+# App Information
+name = "AI Love Story Album Generator"
+client_id = "YOUR_SHOPIFY_APP_CLIENT_ID" # Replace with your actual client ID from Shopify Partner Dashboard
+application_url = "https://your-domain.com" # Replace with your production domain
+embedded = false # This is a storefront app, not embedded in admin
+
+# App Proxy Configuration
+# This allows your app to be accessed via the merchant's storefront
+# Example: https://merchant-store.com/apps/love-album
+[app_proxy]
+url = "https://your-domain.com/api/shopify-proxy/widget" # Your Next.js API endpoint
+subpath = "love-album" # Path on the storefront
+prefix = "apps" # Standard Shopify prefix
+
+# For development, you might use:
+# url = "https://your-ngrok-url.ngrok.io/api/shopify-proxy/widget"
+
+# Access Scopes
+# These are the permissions your app needs
+[access_scopes]
+# Note: For app proxy with storefront integration, minimal scopes are needed
+# Add scopes only if you need to access admin data
+scopes = "read_products,read_customers"
+
+# Optional: If you need write access
+# scopes = "read_products,read_customers,write_checkouts"
+
+# Webhooks
+# Configure webhooks for order processing
+[[webhooks.subscriptions]]
+topics = ["orders/paid"]
+uri = "/api/shopify/webhook"
+
+# GDPR Webhooks (required for all Shopify apps)
+[[webhooks.subscriptions]]
+topics = ["customers/data_request"]
+uri = "/api/shopify/gdpr/data-request"
+
+[[webhooks.subscriptions]]
+topics = ["customers/redact"]
+uri = "/api/shopify/gdpr/redact"
+
+[[webhooks.subscriptions]]
+topics = ["shop/redact"]
+uri = "/api/shopify/gdpr/shop-redact"
+
+# POS Configuration (optional - if you want to support POS)
+# [pos]
+# embedded = false
+
+# Development Configuration
+# When testing locally, you can override settings
+# [build]
+# dev_store_url = "your-dev-store.myshopify.com"
