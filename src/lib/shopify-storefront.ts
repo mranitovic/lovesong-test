@@ -15,6 +15,12 @@ export interface CartLineInput {
   attributes?: Array<{ key: string; value: string }>;
 }
 
+export interface CartUpdateResponse {
+  checkoutUrl: string;
+  checkoutId: string;
+  attributes: Array<{ key: string; value: string }>;
+}
+
 export interface CartAttributeInput {
   key: string;
   value: string;
@@ -145,6 +151,111 @@ export async function createCheckout(
   } catch (error) {
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.error('❌ [Shopify] CHECKOUT CREATION FAILED');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('Error:', error);
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    throw error;
+  }
+}
+
+/**
+ * Update cart attributes using Storefront API
+ *
+ * @param cartToken - The cart token (without gid:// prefix)
+ * @param attributes - Array of attributes to set on the cart
+ */
+export async function updateCartAttributes(
+  cartToken: string,
+  attributes: CartAttributeInput[]
+): Promise<CartUpdateResponse> {
+  const mutation = `
+    mutation cartAttributesUpdate($attributes: [AttributeInput!]!, $cartId: ID!) {
+      cartAttributesUpdate(attributes: $attributes, cartId: $cartId) {
+        cart {
+          id
+          checkoutUrl
+          attributes {
+            key
+            value
+          }
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+
+  // Convert cart token to GID format
+  const cartGid = `gid://shopify/Cart/${cartToken}`;
+
+  const variables = {
+    cartId: cartGid,
+    attributes,
+  };
+
+  try {
+    const endpoint = `https://${SHOPIFY_DOMAIN}/api/${API_VERSION}/graphql.json`;
+
+    console.log('🌐 [Shopify] Updating cart attributes');
+    console.log('  - Endpoint:', endpoint);
+    console.log('  - Cart GID:', cartGid);
+    console.log('  - Attributes:', JSON.stringify(attributes, null, 2));
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Storefront-Access-Token': STOREFRONT_TOKEN,
+      },
+      body: JSON.stringify({ query: mutation, variables }),
+    });
+
+    console.log('📡 [Shopify] Response status:', response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ [Shopify] HTTP error response:', errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('📦 [Shopify] Response data:', JSON.stringify(data, null, 2));
+
+    // Check for GraphQL errors
+    if (data.errors) {
+      console.error('❌ [Shopify] GraphQL errors:', JSON.stringify(data.errors, null, 2));
+      throw new Error(`GraphQL Error: ${JSON.stringify(data.errors)}`);
+    }
+
+    // Check for user errors
+    const cartUpdate = data.data?.cartAttributesUpdate;
+    if (cartUpdate?.userErrors?.length > 0) {
+      const userErrors = cartUpdate.userErrors;
+      console.error('❌ [Shopify] Cart update user errors:', userErrors);
+      const firstError = userErrors[0];
+      throw new Error(`Cart Error: ${firstError.message} (field: ${firstError.field?.join(' > ') || 'unknown'})`);
+    }
+
+    const cart = cartUpdate?.cart;
+    if (!cart || !cart.checkoutUrl) {
+      console.error('❌ [Shopify] No cart or checkout URL in response:', data);
+      throw new Error('No checkout URL returned from Shopify');
+    }
+
+    console.log('✅ [Shopify] Cart attributes updated successfully');
+    console.log('  - Cart ID:', cart.id);
+    console.log('  - Checkout URL:', cart.checkoutUrl);
+
+    return {
+      checkoutUrl: cart.checkoutUrl,
+      checkoutId: cart.id,
+      attributes: cart.attributes,
+    };
+  } catch (error) {
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('❌ [Shopify] CART UPDATE FAILED');
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.error('Error:', error);
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
