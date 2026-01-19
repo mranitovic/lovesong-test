@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 // import { authOptions } from '@/lib/auth';
-import { createCheckout } from '@/lib/shopify-storefront';
+import { createCheckout, updateCartAttributes } from '@/lib/shopify-storefront';
 
 export async function POST(request: NextRequest) {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -111,37 +111,15 @@ export async function POST(request: NextRequest) {
       console.log('🛒 [API] Cart token detected - using CART UPDATE flow');
       console.log('  - Cart Token:', cartToken);
 
-      // Update existing cart with song metadata
-      const updateResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/shopify/update-cart`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            cartToken,
-            songDetails: {
-              albumSessionId,
-              title: songTitle,
-              coupleNames,
-              email: userEmail,
-            }
-          })
-        }
-      );
+      // Update existing cart with song metadata (call Shopify directly)
+      const updateResult = await updateCartAttributes(cartToken, orderAttributes);
 
-      if (!updateResponse.ok) {
-        const errorData = await updateResponse.json();
-        console.error('❌ [API] Failed to update cart:', errorData);
-        throw new Error(errorData.error || 'Failed to update cart');
-      }
-
-      const updateData = await updateResponse.json();
       console.log('✅ [API] Cart updated successfully!');
-      console.log('  - Checkout URL:', updateData.checkoutUrl);
-      console.log('  - Checkout ID:', updateData.checkoutId);
+      console.log('  - Checkout URL:', updateResult.checkoutUrl);
+      console.log('  - Checkout ID:', updateResult.checkoutId);
 
-      checkoutUrl = updateData.checkoutUrl;
-      checkoutId = updateData.checkoutId;
+      checkoutUrl = updateResult.checkoutUrl;
+      checkoutId = updateResult.checkoutId;
 
     } else {
       console.log('🏪 [API] No cart token - using NEW CHECKOUT flow');
