@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 // import { useSession } from 'next-auth/react';
 import { MetaPixelEvents } from '@/lib/tracking';
 
@@ -13,6 +13,24 @@ export default function PaymentGate({ albumSessionId }: PaymentGateProps) {
   // const { data: session } = useSession();
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [price, setPrice] = useState<{ amount: string; currencyCode: string } | null>(null);
+
+  useEffect(() => {
+    const fetchPrice = async () => {
+      const cartToken = sessionStorage.getItem('shopify_cart_token');
+      const url = cartToken ? `/api/payment/get-price?cartToken=${cartToken}` : '/api/payment/get-price';
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.success) {
+          setPrice(data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch price:', err);
+      }
+    };
+    fetchPrice();
+  }, []);
 
   const handleBuyNow = async () => {
     // MODIFIED: Remove authentication check for iframe compatibility
@@ -143,7 +161,10 @@ export default function PaymentGate({ albumSessionId }: PaymentGateProps) {
         {/* Price */}
         <div className="mb-6">
           <div className="text-4xl font-bold text-pink-600 mb-2">
-            R$ 100,00
+            {price ? new Intl.NumberFormat(price.currencyCode === 'BRL' ? 'pt-BR' : 'en-US', {
+              style: 'currency',
+              currency: price.currencyCode,
+            }).format(parseFloat(price.amount)) : '...'}
           </div>
           <p className="text-sm text-gray-500">
             Pagamento único • Acesso vitalício
