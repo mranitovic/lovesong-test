@@ -264,6 +264,54 @@ export async function updateCartAttributes(
 }
 
 /**
+ * Get cart total amount
+ *
+ * @param cartToken - The cart token (without gid:// prefix)
+ */
+export async function getCartTotal(
+  cartToken: string
+): Promise<{ amount: string; currencyCode: string } | null> {
+  const query = `
+    query getCart($id: ID!) {
+      cart(id: $id) {
+        cost {
+          totalAmount {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  `;
+
+  const cartGid = `gid://shopify/Cart/${cartToken}`;
+
+  try {
+    const response = await fetch(
+      `https://${SHOPIFY_DOMAIN}/api/${API_VERSION}/graphql.json`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Storefront-Access-Token': STOREFRONT_TOKEN,
+        },
+        body: JSON.stringify({ query, variables: { id: cartGid } }),
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return data.data?.cart?.cost?.totalAmount || null;
+  } catch (error) {
+    console.error('Error fetching cart total:', error);
+    return null;
+  }
+}
+
+/**
  * Get product variant details by ID
  *
  * @param variantId - Numeric variant ID (not GID)
