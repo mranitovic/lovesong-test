@@ -134,4 +134,4 @@ This makes it easy to find and restore functionality when needed.
 - ✅ Results Display: Adapted for music-only
 - ✅ Download: Works for songs only
 
-The application is fully functional for its core purpose: generating AI music from love stories!
+The application is fully functional for its core purpose: generating AI music from love stories by miacol
